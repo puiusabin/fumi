@@ -80,6 +80,21 @@ export class Fumi {
 		return this;
 	}
 
+	listen(port: number, host?: string): Promise<void> {
+		this._server = this._buildServer();
+		return new Promise((resolve, reject) => {
+			this._server!.on("error", reject);
+			this._server!.listen(port, host, resolve);
+		});
+	}
+
+	close(): Promise<void> {
+		return new Promise((resolve, reject) => {
+			if (!this._server) return resolve();
+			this._server.close((err?: Error) => (err ? reject(err) : resolve()));
+		});
+	}
+
 	private _buildServer(): InstanceType<typeof SMTPServer> {
 		const connectRunner = compose(this._connect);
 		const authRunner = compose(this._auth);
