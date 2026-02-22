@@ -168,3 +168,20 @@ test("onMailFrom middleware can reject with custom code", async () => {
 	const rejectLine = responses.find((r) => code(r) === 550);
 	expect(rejectLine).toBeDefined();
 });
+
+test("multiple onMailFrom middlewares chain correctly", async () => {
+	app = new Fumi({ authOptional: true });
+	const order: number[] = [];
+	app.onMailFrom(async (_ctx, next) => {
+		order.push(1);
+		await next();
+	});
+	app.onMailFrom(async (_ctx, next) => {
+		order.push(2);
+		await next();
+	});
+	await app.listen(12514);
+
+	await smtpTalk(12514, ["EHLO test", "MAIL FROM:<a@b.com>", "QUIT"]);
+	expect(order).toEqual([1, 2]);
+});
