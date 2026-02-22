@@ -81,10 +81,11 @@ export class Fumi {
 	}
 
 	listen(port: number, host?: string): Promise<void> {
-		this._server = this._buildServer();
+		const server = this._buildServer();
+		this._server = server;
 		return new Promise((resolve, reject) => {
-			this._server!.on("error", reject);
-			this._server!.listen(port, host, resolve);
+			server.on("error", reject);
+			server.listen(port, host, resolve);
 		});
 	}
 
