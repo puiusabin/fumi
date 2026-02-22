@@ -225,3 +225,21 @@ test("onAuth reject denies access", async () => {
 	const rejected = responses.find((r) => code(r) === 535);
 	expect(rejected).toBeDefined();
 });
+
+test("plugin system registers hooks via use()", async () => {
+	app = new Fumi({ authOptional: true });
+	let pluginRan = false;
+
+	const myPlugin = (instance: Fumi) => {
+		instance.onConnect(async (_ctx, next) => {
+			pluginRan = true;
+			await next();
+		});
+	};
+
+	app.use(myPlugin);
+	await app.listen(12517);
+
+	await smtpTalk(12517, ["QUIT"]);
+	expect(pluginRan).toBe(true);
+});
