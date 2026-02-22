@@ -1,4 +1,4 @@
-// @ts-ignore — smtp-server ships no type declarations
+// @ts-expect-error — smtp-server ships no type declarations
 import { SMTPServer } from "smtp-server";
 import { compose } from "./compose.ts";
 import {
