@@ -243,3 +243,28 @@ test("plugin system registers hooks via use()", async () => {
 	await smtpTalk(12517, ["QUIT"]);
 	expect(pluginRan).toBe(true);
 });
+
+test("onData receives full message stream", async () => {
+	app = new Fumi({ authOptional: true });
+	let receivedBody = "";
+
+	app.onData(async (ctx, next) => {
+		const chunks: Buffer[] = [];
+		for await (const chunk of ctx.stream) {
+			chunks.push(chunk as Buffer);
+		}
+		receivedBody = Buffer.concat(chunks).toString();
+		await next();
+	});
+	await app.listen(12518);
+
+	await smtpTalk(12518, [
+		"EHLO test",
+		"MAIL FROM:<sender@example.com>",
+		"RCPT TO:<recipient@example.com>",
+		"DATA",
+		"Subject: hello\r\n\r\nHello world\r\n.",
+		"QUIT",
+	]);
+	expect(receivedBody).toContain("Hello world");
+});
