@@ -1,17 +1,17 @@
-export { Fumi } from './src/fumi.ts'
+export { Fumi } from "./src/fumi.ts";
 export {
-  SMTPError,
-  type FumiOptions,
-  type Plugin,
-  type Middleware,
-  type Session,
-  type Address,
-  type Envelope,
-  type Credentials,
-  type ConnectContext,
-  type AuthContext,
-  type MailFromContext,
-  type RcptToContext,
-  type DataContext,
-  type CloseContext,
-} from './src/types.ts'
+	type Address,
+	type AuthContext,
+	type CloseContext,
+	type ConnectContext,
+	type Credentials,
+	type DataContext,
+	type Envelope,
+	type FumiOptions,
+	type MailFromContext,
+	type Middleware,
+	type Plugin,
+	type RcptToContext,
+	type Session,
+	SMTPError,
+} from "./src/types.ts";

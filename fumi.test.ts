@@ -213,7 +213,7 @@ test("onAuth accept grants access", async () => {
 
 	const responses = await smtpTalk(12515, [
 		"EHLO test",
-		"AUTH PLAIN " + Buffer.from("\0admin\0secret").toString("base64"),
+		`AUTH PLAIN ${Buffer.from("\0admin\0secret").toString("base64")}`,
 		"QUIT",
 	]);
 	const authResponse = responses.find((r) => code(r) === 235);
@@ -229,7 +229,7 @@ test("onAuth reject denies access", async () => {
 
 	const responses = await smtpTalk(12516, [
 		"EHLO test",
-		"AUTH PLAIN " + Buffer.from("\0user\0wrong").toString("base64"),
+		`AUTH PLAIN ${Buffer.from("\0user\0wrong").toString("base64")}`,
 		"QUIT",
 	]);
 	const rejected = responses.find((r) => code(r) === 535);

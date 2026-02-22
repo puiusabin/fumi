@@ -2,7 +2,6 @@
 import { SMTPServer } from "smtp-server";
 import { compose } from "./compose.ts";
 import {
-	SMTPError,
 	type Address,
 	type AuthContext,
 	type CloseContext,
@@ -15,6 +14,7 @@ import {
 	type Plugin,
 	type RcptToContext,
 	type Session,
+	SMTPError,
 } from "./types.ts";
 
 function makeReject(defaultCode: number) {
