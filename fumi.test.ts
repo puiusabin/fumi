@@ -87,3 +87,17 @@ test("compose propagates errors from middleware", async () => {
 	]);
 	await expect(run({})).rejects.toThrow("boom");
 });
+
+// --- unit: SMTPError ---
+
+test("SMTPError carries responseCode", () => {
+	const err = new SMTPError("Rejected", 450);
+	expect(err.responseCode).toBe(450);
+	expect(err.message).toBe("Rejected");
+	expect(err).toBeInstanceOf(Error);
+});
+
+test("SMTPError defaults responseCode to 550", () => {
+	const err = new SMTPError("No reason given");
+	expect(err.responseCode).toBe(550);
+});
