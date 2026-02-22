@@ -1,18 +1,39 @@
+// @ts-ignore — smtp-server ships no type declarations
+import { SMTPServer } from "smtp-server";
 import { compose } from "./compose.ts";
 import {
+	SMTPError,
+	type Address,
 	type AuthContext,
 	type CloseContext,
 	type ConnectContext,
+	type Credentials,
 	type DataContext,
 	type FumiOptions,
 	type MailFromContext,
 	type Middleware,
 	type Plugin,
 	type RcptToContext,
+	type Session,
 } from "./types.ts";
+
+function makeReject(defaultCode: number) {
+	return function reject(message = "Rejected", code = defaultCode): never {
+		throw new SMTPError(message, code);
+	};
+}
+
+function bridgeError(err: unknown): Error {
+	const message = err instanceof Error ? err.message : String(err);
+	const code = err instanceof SMTPError ? err.responseCode : 500;
+	const bridged = new Error(message) as Error & { responseCode: number };
+	bridged.responseCode = code;
+	return bridged;
+}
 
 export class Fumi {
 	private _options: FumiOptions;
+	private _server: InstanceType<typeof SMTPServer> | null = null;
 	private _connect: Middleware<ConnectContext>[] = [];
 	private _auth: Middleware<AuthContext>[] = [];
 	private _mailFrom: Middleware<MailFromContext>[] = [];
@@ -57,5 +78,59 @@ export class Fumi {
 	onClose(fn: Middleware<CloseContext>): this {
 		this._close.push(fn);
 		return this;
+	}
+
+	private _buildServer(): InstanceType<typeof SMTPServer> {
+		const connectRunner = compose(this._connect);
+		const authRunner = compose(this._auth);
+		const mailFromRunner = compose(this._mailFrom);
+		const rcptToRunner = compose(this._rcptTo);
+		const dataRunner = compose(this._data);
+		const closeRunner = compose(this._close);
+
+		return new SMTPServer({
+			...this._options,
+
+			onConnect(session: unknown, callback: (err?: Error) => void) {
+				const ctx: ConnectContext = {
+					session: session as Session,
+					reject: makeReject(550),
+				};
+				connectRunner(ctx)
+					.then(() => callback())
+					.catch((err) => callback(bridgeError(err)));
+			},
+
+			onAuth(
+				auth: unknown,
+				session: unknown,
+				callback: (err: Error | null, result?: { user: unknown }) => void,
+			) {
+				let acceptedUser: unknown;
+				let wasAccepted = false;
+
+				const ctx: AuthContext = {
+					session: session as Session,
+					credentials: auth as Credentials,
+					accept(user: unknown) {
+						wasAccepted = true;
+						acceptedUser = user;
+					},
+					reject: makeReject(535),
+				};
+
+				authRunner(ctx)
+					.then(() => {
+						if (wasAccepted) {
+							callback(null, { user: acceptedUser });
+						} else {
+							callback(
+								bridgeError(new SMTPError("Authentication required", 535)),
+							);
+						}
+					})
+					.catch((err) => callback(bridgeError(err)));
+			},
+		});
 	}
 }
