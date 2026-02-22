@@ -115,7 +115,7 @@ test("server sends 220 banner on connect", async () => {
 	await app.listen(12510);
 
 	const responses = await smtpTalk(12510, ["QUIT"]);
-	expect(code(responses[0])).toBe(220);
+	expect(code(responses[0] ?? "")).toBe(220);
 });
 
 test("onConnect middleware runs and can reject", async () => {
@@ -126,7 +126,7 @@ test("onConnect middleware runs and can reject", async () => {
 	await app.listen(12511);
 
 	const responses = await smtpTalk(12511, []);
-	expect(code(responses[0])).toBe(550);
+	expect(code(responses[0] ?? "")).toBe(550);
 });
 
 test("onMailFrom middleware runs and accepts by default", async () => {
