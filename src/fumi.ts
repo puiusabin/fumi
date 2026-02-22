@@ -131,6 +131,62 @@ export class Fumi {
 					})
 					.catch((err) => callback(bridgeError(err)));
 			},
+
+			onMailFrom(
+				address: unknown,
+				session: unknown,
+				callback: (err?: Error) => void,
+			) {
+				const ctx: MailFromContext = {
+					session: session as Session,
+					address: address as Address,
+					reject: makeReject(550),
+				};
+				mailFromRunner(ctx)
+					.then(() => callback())
+					.catch((err) => callback(bridgeError(err)));
+			},
+
+			onRcptTo(
+				address: unknown,
+				session: unknown,
+				callback: (err?: Error) => void,
+			) {
+				const ctx: RcptToContext = {
+					session: session as Session,
+					address: address as Address,
+					reject: makeReject(550),
+				};
+				rcptToRunner(ctx)
+					.then(() => callback())
+					.catch((err) => callback(bridgeError(err)));
+			},
+
+			onData(
+				stream: unknown,
+				session: unknown,
+				callback: (err?: Error | null, message?: string) => void,
+			) {
+				const typedStream = stream as DataContext["stream"] & {
+					sizeExceeded?: boolean;
+				};
+				const ctx: DataContext = {
+					session: session as Session,
+					stream: typedStream,
+					sizeExceeded: typedStream.sizeExceeded ?? false,
+					reject: makeReject(552),
+				};
+				dataRunner(ctx)
+					.then(() => callback())
+					.catch((err) => callback(bridgeError(err)));
+			},
+
+			onClose(session: unknown) {
+				const ctx: CloseContext = { session: session as Session };
+				closeRunner(ctx).catch(() => {
+					// onClose is fire-and-forget; errors are swallowed silently
+				});
+			},
 		});
 	}
 }
