@@ -128,3 +128,43 @@ test("onConnect middleware runs and can reject", async () => {
 	const responses = await smtpTalk(12511, []);
 	expect(code(responses[0])).toBe(550);
 });
+
+test("onMailFrom middleware runs and accepts by default", async () => {
+	app = new Fumi({ authOptional: true });
+	let sawAddress = "";
+	app.onMailFrom(async (ctx, next) => {
+		sawAddress = ctx.address.address;
+		await next();
+	});
+	await app.listen(12512);
+
+	const responses = await smtpTalk(12512, [
+		"EHLO test",
+		"MAIL FROM:<sender@example.com>",
+		"QUIT",
+	]);
+	expect(sawAddress).toBe("sender@example.com");
+	const mailResponse = responses.find(
+		(r) => r.startsWith("250") && responses.indexOf(r) > 1,
+	);
+	expect(mailResponse).toBeDefined();
+	expect(code(mailResponse ?? "")).toBe(250);
+});
+
+test("onMailFrom middleware can reject with custom code", async () => {
+	app = new Fumi({ authOptional: true });
+	app.onMailFrom(async (ctx) => {
+		if (ctx.address.address.endsWith("@blocked.example")) {
+			ctx.reject("Domain blocked", 550);
+		}
+	});
+	await app.listen(12513);
+
+	const responses = await smtpTalk(12513, [
+		"EHLO test",
+		"MAIL FROM:<bad@blocked.example>",
+		"QUIT",
+	]);
+	const rejectLine = responses.find((r) => code(r) === 550);
+	expect(rejectLine).toBeDefined();
+});
