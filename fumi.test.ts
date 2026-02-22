@@ -43,3 +43,47 @@ function smtpTalk(port: number, commands: string[]): Promise<string[]> {
 function code(line: string): number {
 	return parseInt(line.slice(0, 3), 10);
 }
+
+// --- unit: compose ---
+
+test("compose runs middleware in order", async () => {
+	const order: number[] = [];
+	const run = compose<object>([
+		async (_, next) => {
+			order.push(1);
+			await next();
+			order.push(4);
+		},
+		async (_, next) => {
+			order.push(2);
+			await next();
+			order.push(3);
+		},
+	]);
+	await run({});
+	expect(order).toEqual([1, 2, 3, 4]);
+});
+
+test("compose with no middleware resolves immediately", async () => {
+	const run = compose<object>([]);
+	await expect(run({})).resolves.toBeUndefined();
+});
+
+test("compose throws when next() is called twice", async () => {
+	const run = compose<object>([
+		async (_, next) => {
+			await next();
+			await next();
+		},
+	]);
+	await expect(run({})).rejects.toThrow("next() called multiple times");
+});
+
+test("compose propagates errors from middleware", async () => {
+	const run = compose<object>([
+		async () => {
+			throw new Error("boom");
+		},
+	]);
+	await expect(run({})).rejects.toThrow("boom");
+});
