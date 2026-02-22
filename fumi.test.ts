@@ -117,3 +117,14 @@ test("server sends 220 banner on connect", async () => {
 	const responses = await smtpTalk(12510, ["QUIT"]);
 	expect(code(responses[0])).toBe(220);
 });
+
+test("onConnect middleware runs and can reject", async () => {
+	app = new Fumi({ authOptional: true });
+	app.onConnect(async (ctx) => {
+		ctx.reject("Go away", 550);
+	});
+	await app.listen(12511);
+
+	const responses = await smtpTalk(12511, []);
+	expect(code(responses[0])).toBe(550);
+});
