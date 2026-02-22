@@ -185,3 +185,43 @@ test("multiple onMailFrom middlewares chain correctly", async () => {
 	await smtpTalk(12514, ["EHLO test", "MAIL FROM:<a@b.com>", "QUIT"]);
 	expect(order).toEqual([1, 2]);
 });
+
+test("onAuth accept grants access", async () => {
+	app = new Fumi({ authMethods: ["PLAIN"], allowInsecureAuth: true });
+	app.onAuth(async (ctx, next) => {
+		if (
+			ctx.credentials.username === "admin" &&
+			ctx.credentials.password === "secret"
+		) {
+			ctx.accept({ id: 1 });
+		} else {
+			ctx.reject("Bad credentials", 535);
+		}
+		await next();
+	});
+	await app.listen(12515);
+
+	const responses = await smtpTalk(12515, [
+		"EHLO test",
+		"AUTH PLAIN " + Buffer.from("\0admin\0secret").toString("base64"),
+		"QUIT",
+	]);
+	const authResponse = responses.find((r) => code(r) === 235);
+	expect(authResponse).toBeDefined();
+});
+
+test("onAuth reject denies access", async () => {
+	app = new Fumi({ authMethods: ["PLAIN"], allowInsecureAuth: true });
+	app.onAuth(async (ctx) => {
+		ctx.reject("Bad credentials", 535);
+	});
+	await app.listen(12516);
+
+	const responses = await smtpTalk(12516, [
+		"EHLO test",
+		"AUTH PLAIN " + Buffer.from("\0user\0wrong").toString("base64"),
+		"QUIT",
+	]);
+	const rejected = responses.find((r) => code(r) === 535);
+	expect(rejected).toBeDefined();
+});
