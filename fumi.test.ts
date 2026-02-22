@@ -66,7 +66,7 @@ test("compose runs middleware in order", async () => {
 
 test("compose with no middleware resolves immediately", async () => {
 	const run = compose<object>([]);
-	await expect(run({})).resolves.toBeUndefined();
+	await run({});
 });
 
 test("compose throws when next() is called twice", async () => {
@@ -76,7 +76,12 @@ test("compose throws when next() is called twice", async () => {
 			await next();
 		},
 	]);
-	await expect(run({})).rejects.toThrow("next() called multiple times");
+	try {
+		await run({});
+		expect(true).toBe(false);
+	} catch (err) {
+		expect((err as Error).message).toBe("next() called multiple times");
+	}
 });
 
 test("compose propagates errors from middleware", async () => {
@@ -85,7 +90,12 @@ test("compose propagates errors from middleware", async () => {
 			throw new Error("boom");
 		},
 	]);
-	await expect(run({})).rejects.toThrow("boom");
+	try {
+		await run({});
+		expect(true).toBe(false);
+	} catch (err) {
+		expect((err as Error).message).toBe("boom");
+	}
 });
 
 // --- unit: SMTPError ---
