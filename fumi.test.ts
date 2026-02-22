@@ -101,3 +101,19 @@ test("SMTPError defaults responseCode to 550", () => {
 	const err = new SMTPError("No reason given");
 	expect(err.responseCode).toBe(550);
 });
+
+// --- integration ---
+
+let app: Fumi;
+
+afterEach(async () => {
+	await app?.close();
+});
+
+test("server sends 220 banner on connect", async () => {
+	app = new Fumi({ authOptional: true });
+	await app.listen(12510);
+
+	const responses = await smtpTalk(12510, ["QUIT"]);
+	expect(code(responses[0])).toBe(220);
+});
