@@ -10,8 +10,7 @@
 [![npm](https://img.shields.io/npm/v/@puiusabin/fumi)](https://www.npmjs.com/package/@puiusabin/fumi)
 [![npm](https://img.shields.io/npm/dm/@puiusabin/fumi)](https://www.npmjs.com/package/@puiusabin/fumi)
 [![GitHub](https://img.shields.io/github/license/puiusabin/fumi)](https://github.com/puiusabin/fumi/blob/main/LICENSE)
-[![Bundle Size](https://img.shields.io/bundlephobia/min/@puiusabin/fumi)](https://bundlephobia.com/result?p=@puiusabin/fumi)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@puiusabin/fumi)](https://bundlephobia.com/result?p=@puiusabin/fumi)
+[![npm bundle size](https://img.shields.io/npm/unpacked-size/@puiusabin/fumi)](https://www.npmjs.com/package/@puiusabin/fumi)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/puiusabin/fumi)](https://github.com/puiusabin/fumi/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/puiusabin/fumi)](https://github.com/puiusabin/fumi/commits/main)
 
