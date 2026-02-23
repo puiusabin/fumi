@@ -6,6 +6,7 @@
 
 <hr />
 
+[![Build](https://img.shields.io/github/actions/workflow/status/puiusabin/fumi/ci.yml?branch=main&label=build)](https://github.com/puiusabin/fumi/actions)
 [![npm](https://img.shields.io/npm/v/@puiusabin/fumi)](https://www.npmjs.com/package/@puiusabin/fumi)
 [![npm](https://img.shields.io/npm/dm/@puiusabin/fumi)](https://www.npmjs.com/package/@puiusabin/fumi)
 [![GitHub](https://img.shields.io/github/license/puiusabin/fumi)](https://github.com/puiusabin/fumi/blob/main/LICENSE)
@@ -13,7 +14,6 @@
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@puiusabin/fumi)](https://bundlephobia.com/result?p=@puiusabin/fumi)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/puiusabin/fumi)](https://github.com/puiusabin/fumi/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/puiusabin/fumi)](https://github.com/puiusabin/fumi/commits/main)
-[![CI](https://img.shields.io/github/actions/workflow/status/puiusabin/fumi/ci.yml?branch=main&label=CI)](https://github.com/puiusabin/fumi/actions)
 
 ```ts
 import { Fumi } from "@puiusabin/fumi";
