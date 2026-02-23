@@ -87,6 +87,7 @@ export interface FumiOptions {
 	key?: string | Buffer;
 	cert?: string | Buffer;
 	ca?: string | Buffer;
+	requireTLS?: boolean;
 
 	// Auth
 	authMethods?: string[];
