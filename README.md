@@ -1,6 +1,10 @@
-# fumi
+<div align="center">
+  <a href="https://fumi.run">
+    <img src="https://raw.githubusercontent.com/puiusabin/fumi/main/docs/images/fumi-title.png" width="500" height="auto" alt="fumi"/>
+  </a>
+</div>
 
-fumi is a Bun-native SMTP server framework. Composable middleware per SMTP phase. TypeScript-first. Plugin-ready.
+<hr />
 
 ```ts
 import { Fumi } from "fumi";
@@ -33,7 +37,7 @@ bun add fumi
 
 ## Documentation
 
-Full docs at [fumi.dev](https://fumi.dev).
+Full docs at [fumi.run](https://fumi.run).
 
 ## Contributing
 
