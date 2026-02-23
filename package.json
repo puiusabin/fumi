@@ -1,8 +1,33 @@
 {
-  "name": "fumi",
-  "module": "index.ts",
+  "name": "@puiusabin/fumi",
+  "version": "0.1.0",
+  "description": "Bun-native SMTP server framework with composable middleware",
+  "license": "MIT",
+  "author": "Sabin Puiu <https://github.com/puiusabin>",
+  "homepage": "https://fumi.run",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/puiusabin/fumi"
+  },
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./plugins/*": {
+      "import": "./dist/plugins/*.js",
+      "types": "./dist/plugins/*.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "bun build index.ts ./plugins/*.ts --outdir dist --target node --packages external && tsc -p tsconfig.build.json && find dist -name '*.d.ts' -exec sed -i '' 's/\\.ts\"/\\.js\"/g' {} +",
     "docs:dev": "bun run --cwd docs dev",
     "docs:build": "bun run --cwd docs build"
   },
