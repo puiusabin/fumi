@@ -1,0 +1,83 @@
+---
+title: Session
+description: The Session object and how to share state across SMTP phases.
+---
+
+The `session` object is created when a client connects and passed through every middleware phase. It is the primary way to share state across the connection lifecycle.
+
+```ts
+app.onConnect(async (ctx, next) => {
+  console.log(ctx.session.remoteAddress); // e.g. "127.0.0.1"
+  await next();
+});
+```
+
+## Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `string` | Unique connection ID, generated per connection |
+| `remoteAddress` | `string` | Client IP address |
+| `clientHostname` | `string` | Hostname the client provided in `EHLO`/`HELO` |
+| `secure` | `boolean` | `true` after STARTTLS upgrade or on implicit TLS (SMTPS) |
+| `user` | `unknown` | Set by `ctx.accept(user)` in `onAuth`. `undefined` if auth was skipped |
+| `envelope` | `Envelope` | Populated after `MAIL FROM` and `RCPT TO` complete |
+| `transmissionType` | `string` | `"SMTP"`, `"ESMTP"`, or `"ESMTPS"` depending on connection type |
+
+## When fields are populated
+
+Not every field is available in every phase:
+
+- `id`, `remoteAddress`, `clientHostname` — available from `onConnect` onward
+- `secure` — `false` initially; becomes `true` after STARTTLS or on SMTPS connections
+- `user` — only available after `ctx.accept(user)` is called in `onAuth`
+- `envelope` — fully populated after `onRcptTo` completes; partial during `onMailFrom`
+- `transmissionType` — available from `onMailFrom` onward
+
+## Sharing state across phases
+
+Since `session` is the same object throughout the connection, you can attach arbitrary data to `session.user` in `onAuth` and read it in later phases.
+
+```ts
+type AuthUser = { id: number; role: string };
+
+app.onAuth(async (ctx, next) => {
+  const user = await db.findByCredentials(
+    ctx.credentials.username,
+    ctx.credentials.password,
+  );
+  if (!user) {
+    ctx.reject("Bad credentials", 535);
+  }
+  ctx.accept(user as AuthUser);
+  await next();
+});
+
+app.onMailFrom(async (ctx, next) => {
+  const user = ctx.session.user as AuthUser | undefined;
+  if (user?.role !== "sender") {
+    ctx.reject("Not authorized to send mail", 550);
+  }
+  await next();
+});
+```
+
+## The envelope
+
+`session.envelope` contains the parsed `MAIL FROM` and `RCPT TO` data once those commands complete.
+
+```ts
+app.onData(async (ctx, next) => {
+  const { mailFrom, rcptTo } = ctx.session.envelope;
+  console.log("from:", mailFrom.address);
+  console.log("to:", rcptTo.map((r) => r.address));
+  await next();
+});
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `envelope.mailFrom` | `Address` | Parsed sender address |
+| `envelope.rcptTo` | `Address[]` | All accepted recipient addresses |
+
+`Address` has an `address` string (e.g. `"user@example.com"`) and optional `args` from the SMTP command.

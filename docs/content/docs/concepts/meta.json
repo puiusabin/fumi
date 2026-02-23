@@ -1,0 +1,6 @@
+{
+  "title": "Core Concepts",
+  "collapsible": true,
+  "defaultOpen": true,
+  "pages": ["middleware", "session", "errors"]
+}

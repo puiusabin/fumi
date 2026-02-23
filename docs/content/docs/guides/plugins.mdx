@@ -1,0 +1,113 @@
+---
+title: Plugins
+description: Write and use plugins to share reusable SMTP logic.
+---
+
+A plugin is a function that receives the `Fumi` instance and registers its own handlers.
+
+```ts
+import type { Plugin } from "fumi";
+
+export function myPlugin(): Plugin {
+  return (app) => {
+    app.onConnect(async (ctx, next) => {
+      console.log(`[connect] ${ctx.session.remoteAddress}`);
+      await next();
+    });
+  };
+}
+```
+
+Register it with `app.use()`:
+
+```ts
+import { Fumi } from "fumi";
+import { myPlugin } from "./my-plugin.ts";
+
+const app = new Fumi({ authOptional: true });
+app.use(myPlugin());
+await app.listen(2525);
+```
+
+## Bundled plugins
+
+fumi ships a small set of reference plugins in `plugins/`:
+
+### logger
+
+Logs each SMTP phase to stdout.
+
+```ts
+import { logger } from "fumi/plugins/logger";
+app.use(logger());
+```
+
+### denylist
+
+Blocks connections from specific IP addresses.
+
+```ts
+import { denylist } from "fumi/plugins/denylist";
+app.use(denylist(["1.2.3.4"]));
+```
+
+### senderBlock
+
+Rejects mail from specific sender domains.
+
+```ts
+import { senderBlock } from "fumi/plugins/sender-block";
+app.use(senderBlock(["spam.example"]));
+```
+
+### rcptFilter
+
+Only accepts recipients whose domain is in an allowed list.
+
+```ts
+import { rcptFilter } from "fumi/plugins/rcpt-filter";
+app.use(rcptFilter(["mycompany.com"]));
+```
+
+### maxSize
+
+Rejects messages that exceed a byte limit. Pair with `FumiOptions.size`.
+
+```ts
+import { maxSize } from "fumi/plugins/max-size";
+
+const app = new Fumi({ size: 10_000_000 });
+app.use(maxSize(10_000_000));
+```
+
+### requireTls
+
+Rejects `MAIL FROM` on unencrypted connections (STARTTLS not completed).
+
+```ts
+import { requireTls } from "fumi/plugins/require-tls";
+app.use(requireTls());
+```
+
+## Writing a plugin with options
+
+Plugins are factory functions — return a `Plugin` from a function that takes options.
+
+```ts
+import type { Plugin } from "fumi";
+
+export function rateLimit(opts: { max: number; windowMs: number }): Plugin {
+  const counts = new Map<string, number>();
+  return (app) => {
+    app.onConnect(async (ctx, next) => {
+      const ip = ctx.session.remoteAddress;
+      const count = (counts.get(ip) ?? 0) + 1;
+      counts.set(ip, count);
+      if (count > opts.max) {
+        ctx.reject("Too many connections", 421);
+      }
+      await next();
+    });
+  };
+}
+```

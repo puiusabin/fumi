@@ -1,0 +1,90 @@
+---
+title: Middleware
+description: How fumi's per-phase middleware system works.
+---
+
+Middleware in fumi follows the koa-compose pattern: `(ctx, next) => Promise<void>`.
+
+```ts
+app.onMailFrom(async (ctx, next) => {
+  // runs before the next middleware
+  console.log("from:", ctx.address.address);
+  await next();
+  // runs after the next middleware returns
+});
+```
+
+## Chaining
+
+Register multiple handlers by calling the same method multiple times. They execute in registration order.
+
+```ts
+app.onConnect(async (ctx, next) => {
+  console.log("first");
+  await next();
+});
+
+app.onConnect(async (ctx, next) => {
+  console.log("second");
+  await next();
+});
+```
+
+## Short-circuiting
+
+Skip `next()` to stop the chain without an error. The phase will still succeed from the client's perspective.
+
+```ts
+app.onMailFrom(async (ctx, next) => {
+  if (cached(ctx.address.address)) {
+    // skip further processing, accept immediately
+    return;
+  }
+  await next();
+});
+```
+
+## Rejection
+
+Call `ctx.reject()` to send an SMTP error response and stop the chain. It throws internally — `never` return type.
+
+```ts
+app.onRcptTo(async (ctx, next) => {
+  const domain = ctx.address.address.split("@")[1] ?? "";
+  if (!allowedDomains.has(domain)) {
+    ctx.reject(`Recipient domain ${domain} not accepted`, 550);
+  }
+  await next();
+});
+```
+
+## Auth middleware
+
+`onAuth` is the only phase with `ctx.accept(user)`. If the chain completes without calling `accept()` or `reject()`, the server returns 535.
+
+```ts
+app.onAuth(async (ctx, next) => {
+  const user = await db.verifyCredentials(
+    ctx.credentials.username,
+    ctx.credentials.password,
+  );
+  if (!user) {
+    ctx.reject("Bad credentials", 535);
+  }
+  ctx.accept(user);
+  await next();
+});
+```
+
+## Available contexts
+
+| Phase | ctx fields |
+|---|---|
+| `onConnect` | `session`, `reject()` |
+| `onAuth` | `session`, `credentials`, `accept()`, `reject()` |
+| `onMailFrom` | `session`, `address`, `reject()` |
+| `onRcptTo` | `session`, `address`, `reject()` |
+| `onData` | `session`, `stream`, `sizeExceeded`, `reject()` |
+| `onClose` | `session` |
+
+The `session` object carries `id`, `remoteAddress`, `clientHostname`, `secure`, `user`, and `envelope` across all phases.

@@ -1,0 +1,73 @@
+---
+title: TLS
+description: Configure STARTTLS and implicit TLS (SMTPS) in fumi.
+---
+
+fumi supports both TLS modes via `FumiOptions`, which pass directly to `smtp-server`.
+
+## STARTTLS — port 587
+
+The server advertises `STARTTLS` in the `EHLO` response. The client upgrades before sending mail. After upgrade, `ctx.session.secure === true`.
+
+```ts
+import { Fumi } from "fumi";
+import { requireTls } from "fumi/plugins/require-tls";
+
+const app = new Fumi({
+  key: Bun.file("server.key").arrayBuffer(),
+  cert: Bun.file("server.cert").arrayBuffer(),
+  authOptional: true,
+});
+
+// Reject MAIL FROM if client skipped STARTTLS
+app.use(requireTls());
+
+await app.listen(587);
+```
+
+## Implicit TLS / SMTPS — port 465
+
+The connection is TLS from the start. No `STARTTLS` command.
+
+```ts
+const app = new Fumi({
+  secure: true,
+  key: Bun.file("server.key").arrayBuffer(),
+  cert: Bun.file("server.cert").arrayBuffer(),
+  authOptional: true,
+});
+
+await app.listen(465);
+```
+
+## Protocol-level enforcement
+
+Set `requireTLS: true` in options to let `smtp-server` reject `MAIL FROM` at the protocol level before middleware runs. This is simpler but less customizable than the `requireTls()` plugin.
+
+```ts
+const app = new Fumi({
+  key: Bun.file("server.key").arrayBuffer(),
+  cert: Bun.file("server.cert").arrayBuffer(),
+  requireTLS: true,
+});
+```
+
+## Local development
+
+Generate a self-signed certificate with `mkcert`:
+
+```sh
+brew install mkcert
+mkcert -install
+mkcert localhost
+# produces: localhost.pem + localhost-key.pem
+```
+
+Then pass them to `FumiOptions`:
+
+```ts
+const app = new Fumi({
+  key: await Bun.file("localhost-key.pem").text(),
+  cert: await Bun.file("localhost.pem").text(),
+});
+```

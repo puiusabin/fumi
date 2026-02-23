@@ -1,0 +1,116 @@
+---
+title: Authentication
+description: Handle SMTP authentication with PLAIN and LOGIN methods.
+---
+
+SMTP auth runs in the `onAuth` phase. The client sends credentials, and your middleware decides whether to accept or reject them.
+
+```ts
+app.onAuth(async (ctx, next) => {
+  if (ctx.credentials.username === "relay" && ctx.credentials.password === "secret") {
+    ctx.accept({ username: ctx.credentials.username });
+  } else {
+    ctx.reject("Bad credentials", 535);
+  }
+  await next();
+});
+```
+
+## ctx.credentials
+
+| Field | Type | Description |
+|---|---|---|
+| `method` | `string` | Auth method: `"PLAIN"` or `"LOGIN"` |
+| `username` | `string` | The username the client sent |
+| `password` | `string` | The password the client sent |
+| `validatePassword(pw)` | `(pw: string) => boolean` | Constant-time comparison helper |
+
+Use `validatePassword` instead of `===` when comparing passwords to avoid timing attacks:
+
+```ts
+if (!ctx.credentials.validatePassword(storedHash)) {
+  ctx.reject("Bad credentials", 535);
+}
+```
+
+## ctx.accept(user)
+
+Pass any value to `ctx.accept()`. It becomes available as `session.user` in all subsequent phases.
+
+If the chain completes without calling `accept()` or `reject()`, the server automatically responds with 535.
+
+```ts
+app.onAuth(async (ctx, next) => {
+  const user = await db.users.findByUsername(ctx.credentials.username);
+  if (!user || !ctx.credentials.validatePassword(user.passwordHash)) {
+    ctx.reject("Bad credentials", 535);
+  }
+  ctx.accept(user); // user is now session.user downstream
+  await next();
+});
+```
+
+## Checking auth in downstream middleware
+
+Read `session.user` in any phase that runs after `onAuth`.
+
+```ts
+type AuthUser = { id: number; plan: "free" | "pro" };
+
+app.onData(async (ctx, next) => {
+  const user = ctx.session.user as AuthUser;
+  if (user.plan === "free" && messageIsLarge(ctx.stream)) {
+    ctx.reject("Upgrade to send large messages", 552);
+  }
+  await next();
+});
+```
+
+## Auth over plain TCP
+
+By default, `smtp-server` refuses AUTH commands on unencrypted connections when STARTTLS is advertised. For local development or internal networks where TLS is handled externally, set `allowInsecureAuth: true`:
+
+```ts
+const app = new Fumi({
+  allowInsecureAuth: true,
+  authOptional: false,
+});
+```
+
+Do not use this in production unless your server sits behind a TLS-terminating proxy.
+
+## Skipping auth entirely
+
+Set `authOptional: true` to allow unauthenticated clients. The `onAuth` phase is still available — it just won't be required.
+
+```ts
+const app = new Fumi({ authOptional: true });
+```
+
+When auth is skipped, `session.user` stays `undefined` in downstream phases.
+
+## Database lookup example
+
+```ts
+import { Fumi } from "fumi";
+
+type User = { id: number; username: string; passwordHash: string };
+
+const app = new Fumi();
+
+app.onAuth(async (ctx, next) => {
+  const user: User | null = await db.query(
+    "SELECT * FROM users WHERE username = ?",
+    [ctx.credentials.username],
+  );
+
+  if (!user || !ctx.credentials.validatePassword(user.passwordHash)) {
+    ctx.reject("Bad credentials", 535);
+  }
+
+  ctx.accept({ id: user.id, username: user.username });
+  await next();
+});
+
+await app.listen(2525);
+```

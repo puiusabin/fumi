@@ -1,0 +1,6 @@
+{
+  "title": "Guides",
+  "collapsible": true,
+  "defaultOpen": true,
+  "pages": ["plugins", "auth", "tls"]
+}

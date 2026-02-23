@@ -1,0 +1,82 @@
+---
+title: Getting Started
+description: Install fumi and send your first SMTP session.
+---
+
+## Installation
+
+<Tabs items={['bun', 'npm', 'pnpm', 'yarn']}>
+  <Tab value="bun">
+    ```sh
+    bun add fumi
+    ```
+  </Tab>
+  <Tab value="npm">
+    ```sh
+    npm install fumi
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```sh
+    pnpm add fumi
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```sh
+    yarn add fumi
+    ```
+  </Tab>
+</Tabs>
+
+## Minimal server
+
+```ts
+import { Fumi } from "fumi";
+
+const app = new Fumi({ authOptional: true });
+
+app.onData(async (ctx, next) => {
+  const chunks: Buffer[] = [];
+  for await (const chunk of ctx.stream) {
+    chunks.push(chunk as Buffer);
+  }
+  const raw = Buffer.concat(chunks).toString();
+  console.log(raw);
+  await next();
+});
+
+await app.listen(2525);
+console.log("SMTP server listening on port 2525");
+```
+
+Test it with netcat:
+
+```sh
+printf "EHLO test\r\nMAIL FROM:<sender@example.com>\r\nRCPT TO:<you@example.com>\r\nDATA\r\nSubject: test\r\n\r\nHello\r\n.\r\nQUIT\r\n" | nc localhost 2525
+```
+
+## Rejecting connections
+
+`ctx.reject()` throws an `SMTPError` internally and has return type `never`. The TypeScript compiler treats any code after it as unreachable.
+
+```ts
+app.onMailFrom(async (ctx, next) => {
+  if (ctx.address.address.endsWith("@blocked.example")) {
+    ctx.reject("Domain blocked", 550);
+    // unreachable — compiler knows this
+  }
+  await next();
+});
+```
+
+## Closing the server
+
+`app.listen()` returns a `Promise<void>`. `app.close()` does too.
+
+```ts
+const app = new Fumi({ authOptional: true });
+await app.listen(2525);
+
+// later
+await app.close();
+```

@@ -1,0 +1,72 @@
+---
+title: Errors
+description: SMTPError, response codes, and how rejection works in fumi.
+---
+
+## SMTPError
+
+`SMTPError` is the error class fumi uses for SMTP-level rejections.
+
+```ts
+import { SMTPError } from "fumi";
+
+const err = new SMTPError("Mailbox unavailable", 550);
+console.log(err.message);      // "Mailbox unavailable"
+console.log(err.responseCode); // 550
+console.log(err.name);         // "SMTPError"
+```
+
+You rarely construct `SMTPError` directly. Instead, you call `ctx.reject()`, which creates and throws one internally.
+
+## ctx.reject()
+
+`ctx.reject(message, code)` has a return type of `never`. It throws an `SMTPError`, which unwinds the middleware chain and sends the error response to the client.
+
+```ts
+app.onMailFrom(async (ctx, next) => {
+  if (blocklist.has(ctx.address.address)) {
+    ctx.reject("Sender blocked", 550);
+    // nothing below this line runs
+  }
+  await next();
+});
+```
+
+Because `ctx.reject()` throws, TypeScript correctly narrows the control flow — you don't need an explicit `return` after calling it.
+
+## ctx.reject() vs throwing
+
+You can throw a plain `Error`, but the SMTP client will receive a generic 500 response. Use `ctx.reject()` when you want a specific code.
+
+```ts
+// generic 500 to client
+throw new Error("something went wrong");
+
+// specific code to client
+ctx.reject("Temporarily unavailable", 421);
+```
+
+## Common response codes
+
+| Code | Meaning | Typical use |
+|---|---|---|
+| `220` | Service ready | Sent automatically on connect |
+| `250` | OK | Command accepted |
+| `421` | Service unavailable | Temporary rejection, client should retry |
+| `450` | Mailbox unavailable | Soft bounce, try again later |
+| `530` | Must issue STARTTLS first | Reject if client skipped STARTTLS |
+| `535` | Authentication failed | Bad credentials in `onAuth` |
+| `550` | Mailbox unavailable | Hard reject — blocklist, unknown user |
+| `552` | Message too large | Reject oversized DATA |
+
+## Errors in onClose
+
+`onClose` runs after the connection ends. Any error thrown inside `onClose` middleware is swallowed by `smtp-server` — the client has already disconnected. Do not use `ctx.reject()` in `onClose`.
+
+```ts
+app.onClose(async (ctx, next) => {
+  // safe: errors here are fire-and-forget
+  await logConnection(ctx.session).catch(console.error);
+  await next();
+});
+```
