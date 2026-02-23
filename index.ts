@@ -1,4 +1,4 @@
-export { Fumi } from "./src/fumi.ts";
+export { Fumi } from "./src/fumi.js";
 export {
 	type Address,
 	type AuthContext,
@@ -14,4 +14,4 @@ export {
 	type RcptToContext,
 	type Session,
 	SMTPError,
-} from "./src/types.ts";
+} from "./src/types.js";

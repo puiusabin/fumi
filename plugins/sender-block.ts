@@ -1,4 +1,4 @@
-import type { Plugin } from "../index.ts";
+import type { Plugin } from "../index.js";
 
 /**
  * Rejects mail from specific sender domains.

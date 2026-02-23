@@ -1,4 +1,4 @@
-import type { Plugin } from "../index.ts";
+import type { Plugin } from "../index.js";
 
 /**
  * Only accepts recipients whose domain is in an allowed list.

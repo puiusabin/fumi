@@ -1,5 +1,5 @@
 import type { Readable } from "node:stream";
-import type { Fumi } from "./fumi.ts";
+import type { Fumi } from "./fumi.js";
 
 export class SMTPError extends Error {
 	responseCode: number;

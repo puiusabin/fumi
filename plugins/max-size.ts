@@ -1,4 +1,4 @@
-import type { Plugin } from "../index.ts";
+import type { Plugin } from "../index.js";
 
 /**
  * Rejects messages that exceed a byte limit.

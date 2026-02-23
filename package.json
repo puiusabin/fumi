@@ -27,7 +27,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build index.ts ./plugins/*.ts --outdir dist --target node --packages external && tsc -p tsconfig.build.json && find dist -name '*.d.ts' -exec perl -pi -e 's/\\.ts\"/\\.js\"/g' {} +",
+    "build": "bun build index.ts ./plugins/*.ts --outdir dist --target node --packages external && tsc -p tsconfig.build.json",
     "docs:dev": "bun run --cwd docs dev",
     "docs:build": "bun run --cwd docs build"
   },

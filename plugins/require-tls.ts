@@ -1,4 +1,4 @@
-import type { Plugin } from "../index.ts";
+import type { Plugin } from "../index.js";
 
 /**
  * Rejects MAIL FROM on unencrypted connections.

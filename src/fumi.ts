@@ -1,6 +1,6 @@
 // @ts-expect-error — smtp-server ships no type declarations
 import { SMTPServer } from "smtp-server";
-import { compose } from "./compose.ts";
+import { compose } from "./compose.js";
 import {
   type Address,
   type AuthContext,
@@ -15,7 +15,7 @@ import {
   type RcptToContext,
   type Session,
   SMTPError,
-} from "./types.ts";
+} from "./types.js";
 
 function makeReject(defaultCode: number) {
   return function reject(message = "Rejected", code = defaultCode): never {
