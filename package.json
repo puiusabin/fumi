@@ -7,7 +7,7 @@
   "homepage": "https://fumi.run",
   "repository": {
     "type": "git",
-    "url": "https://github.com/puiusabin/fumi"
+    "url": "git+https://github.com/puiusabin/fumi.git"
   },
   "type": "module",
   "main": "./dist/index.js",
