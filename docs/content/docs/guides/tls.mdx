@@ -10,7 +10,7 @@ fumi supports both TLS modes via `FumiOptions`, which pass directly to `smtp-ser
 The server advertises `STARTTLS` in the `EHLO` response. The client upgrades before sending mail. After upgrade, `ctx.session.secure === true`.
 
 ```ts
-import { Fumi } from "fumi";
+import { Fumi } from "@puiusabin/fumi";
 import { requireTls } from "fumi/plugins/require-tls";
 
 const app = new Fumi({

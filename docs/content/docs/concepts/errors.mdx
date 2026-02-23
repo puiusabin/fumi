@@ -8,7 +8,7 @@ description: SMTPError, response codes, and how rejection works in fumi.
 `SMTPError` is the error class fumi uses for SMTP-level rejections.
 
 ```ts
-import { SMTPError } from "fumi";
+import { SMTPError } from "@puiusabin/fumi";
 
 const err = new SMTPError("Mailbox unavailable", 550);
 console.log(err.message);      // "Mailbox unavailable"

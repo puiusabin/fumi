@@ -6,7 +6,7 @@ description: Write and use plugins to share reusable SMTP logic.
 A plugin is a function that receives the `Fumi` instance and registers its own handlers.
 
 ```ts
-import type { Plugin } from "fumi";
+import type { Plugin } from "@puiusabin/fumi";
 
 export function myPlugin(): Plugin {
   return (app) => {
@@ -21,7 +21,7 @@ export function myPlugin(): Plugin {
 Register it with `app.use()`:
 
 ```ts
-import { Fumi } from "fumi";
+import { Fumi } from "@puiusabin/fumi";
 import { myPlugin } from "./my-plugin.ts";
 
 const app = new Fumi({ authOptional: true });
@@ -94,7 +94,7 @@ app.use(requireTls());
 Plugins are factory functions — return a `Plugin` from a function that takes options.
 
 ```ts
-import type { Plugin } from "fumi";
+import type { Plugin } from "@puiusabin/fumi";
 
 export function rateLimit(opts: { max: number; windowMs: number }): Plugin {
   const counts = new Map<string, number>();

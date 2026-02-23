@@ -8,22 +8,22 @@ description: Install fumi and send your first SMTP session.
 <Tabs items={['bun', 'npm', 'pnpm', 'yarn']}>
   <Tab value="bun">
     ```sh
-    bun add fumi
+    bun add @puiusabin/fumi
     ```
   </Tab>
   <Tab value="npm">
     ```sh
-    npm install fumi
+    npm install @puiusabin/fumi
     ```
   </Tab>
   <Tab value="pnpm">
     ```sh
-    pnpm add fumi
+    pnpm add @puiusabin/fumi
     ```
   </Tab>
   <Tab value="yarn">
     ```sh
-    yarn add fumi
+    yarn add @puiusabin/fumi
     ```
   </Tab>
 </Tabs>
@@ -31,7 +31,7 @@ description: Install fumi and send your first SMTP session.
 ## Minimal server
 
 ```ts
-import { Fumi } from "fumi";
+import { Fumi } from "@puiusabin/fumi";
 
 const app = new Fumi({ authOptional: true });
 

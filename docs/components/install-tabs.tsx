@@ -6,10 +6,10 @@ const managers = ['bun', 'npm', 'pnpm', 'yarn'] as const;
 type Manager = (typeof managers)[number];
 
 const commands: Record<Manager, string> = {
-  bun: 'bun add fumi',
-  npm: 'npm install fumi',
-  pnpm: 'pnpm add fumi',
-  yarn: 'yarn add fumi',
+  bun: 'bun add @puiusabin/fumi',
+  npm: 'npm install @puiusabin/fumi',
+  pnpm: 'pnpm add @puiusabin/fumi',
+  yarn: 'yarn add @puiusabin/fumi',
 };
 
 export function InstallTabs() {
