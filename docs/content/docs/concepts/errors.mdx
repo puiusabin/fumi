@@ -1,13 +1,14 @@
 ---
 title: Errors
 description: SMTPError, response codes, and how rejection works in fumi.
+icon: AlertCircle
 ---
 
 ## SMTPError
 
 `SMTPError` is the error class fumi uses for SMTP-level rejections.
 
-```ts
+```ts title="example.ts"
 import { SMTPError } from "@puiusabin/fumi";
 
 const err = new SMTPError("Mailbox unavailable", 550);
@@ -16,13 +17,13 @@ console.log(err.responseCode); // 550
 console.log(err.name);         // "SMTPError"
 ```
 
-You rarely construct `SMTPError` directly. Instead, you call `ctx.reject()`, which creates and throws one internally.
+You rarely construct `SMTPError` directly. Instead, call `ctx.reject()`, which creates and throws one internally.
 
 ## ctx.reject()
 
 `ctx.reject(message, code)` has a return type of `never`. It throws an `SMTPError`, which unwinds the middleware chain and sends the error response to the client.
 
-```ts
+```ts title="server.ts"
 app.onMailFrom(async (ctx, next) => {
   if (blocklist.has(ctx.address.address)) {
     ctx.reject("Sender blocked", 550);
@@ -34,11 +35,11 @@ app.onMailFrom(async (ctx, next) => {
 
 Because `ctx.reject()` throws, TypeScript correctly narrows the control flow — you don't need an explicit `return` after calling it.
 
-## ctx.reject() vs throwing
+### Throwing without a code
 
 You can throw a plain `Error`, but the SMTP client will receive a generic 500 response. Use `ctx.reject()` when you want a specific code.
 
-```ts
+```ts title="server.ts"
 // generic 500 to client
 throw new Error("something went wrong");
 
@@ -46,24 +47,81 @@ throw new Error("something went wrong");
 ctx.reject("Temporarily unavailable", 421);
 ```
 
+## Temporary vs permanent rejection
+
+The first digit of an SMTP response code determines whether a failure is temporary or permanent. Sending mail servers act on this differently.
+
+<Callout type="warn">
+  The default code in `ctx.reject()` is 550 (permanent). Be intentional — if
+  the condition is temporary, pass a 4xx code explicitly.
+</Callout>
+
+### Temporary rejection (4xx)
+
+The sending server keeps the message in its queue and retries later, usually with exponential backoff for up to several days.
+
+```ts title="server.ts"
+// Backend is down — don't permanently reject, tell the sender to retry
+app.onRcptTo(async (ctx, next) => {
+  const available = await db.ping().catch(() => false);
+  if (!available) {
+    ctx.reject("Service temporarily unavailable", 451);
+  }
+  await next();
+});
+```
+
+Common uses:
+- Greylisting (421) — intentional first-contact delay; legitimate servers retry, spam bots often don't
+- Rate limiting (421) — back off a sender without bouncing their mail
+- Backend unavailable (451) — DB down, can't verify recipient
+- Storage full (452) — disk or queue capacity exceeded
+
+### Permanent rejection (5xx)
+
+The sending server removes the message from its queue and bounces it back to the original sender.
+
+```ts title="server.ts"
+// Unknown user — permanent, no point retrying
+app.onRcptTo(async (ctx, next) => {
+  const exists = await db.users.exists(ctx.address.address);
+  if (!exists) {
+    ctx.reject("Mailbox unavailable", 550);
+  }
+  await next();
+});
+```
+
+Common uses:
+- Blocked sender or IP (550) — policy rejection
+- Unknown recipient (550) — user doesn't exist
+- Authentication failed (535) — wrong credentials
+- Message too large (552) — exceeds size limit
+
 ## Common response codes
 
 | Code | Meaning | Typical use |
 |---|---|---|
 | `220` | Service ready | Sent automatically on connect |
 | `250` | OK | Command accepted |
-| `421` | Service unavailable | Temporary rejection, client should retry |
-| `450` | Mailbox unavailable | Soft bounce, try again later |
+| `421` | Service unavailable | Temporary — greylisting, rate limiting |
+| `450` | Mailbox unavailable | Temporary — soft bounce, try again later |
+| `451` | Local error | Temporary — backend unavailable |
+| `452` | Insufficient storage | Temporary — disk or queue full |
 | `530` | Must issue STARTTLS first | Reject if client skipped STARTTLS |
 | `535` | Authentication failed | Bad credentials in `onAuth` |
-| `550` | Mailbox unavailable | Hard reject — blocklist, unknown user |
-| `552` | Message too large | Reject oversized DATA |
+| `550` | Mailbox unavailable | Permanent — blocklist, unknown user |
+| `552` | Message too large | Permanent — reject oversized DATA |
 
 ## Errors in onClose
 
-`onClose` runs after the connection ends. Any error thrown inside `onClose` middleware is swallowed by `smtp-server` — the client has already disconnected. Do not use `ctx.reject()` in `onClose`.
+<Callout type="warn">
+  `onClose` runs after the connection ends. Any error thrown inside `onClose`
+  middleware is swallowed — the client has already disconnected. Do not use
+  `ctx.reject()` in `onClose`.
+</Callout>
 
-```ts
+```ts title="server.ts"
 app.onClose(async (ctx, next) => {
   // safe: errors here are fire-and-forget
   await logConnection(ctx.session).catch(console.error);

@@ -1,11 +1,12 @@
 ---
 title: Plugins
 description: Write and use plugins to share reusable SMTP logic.
+icon: Puzzle
 ---
 
 A plugin is a function that receives the `Fumi` instance and registers its own handlers.
 
-```ts
+```ts title="my-plugin.ts"
 import type { Plugin } from "@puiusabin/fumi";
 
 export function myPlugin(): Plugin {
@@ -20,7 +21,7 @@ export function myPlugin(): Plugin {
 
 Register it with `app.use()`:
 
-```ts
+```ts title="server.ts"
 import { Fumi } from "@puiusabin/fumi";
 import { myPlugin } from "./my-plugin.ts";
 
@@ -31,14 +32,14 @@ await app.listen(2525);
 
 ## Bundled plugins
 
-fumi ships a small set of reference plugins in `plugins/`:
+fumi ships a small set of reference plugins. Import them from `@puiusabin/fumi/plugins/*`.
 
 ### logger
 
 Logs each SMTP phase to stdout.
 
-```ts
-import { logger } from "fumi/plugins/logger";
+```ts title="server.ts"
+import { logger } from "@puiusabin/fumi/plugins/logger";
 app.use(logger());
 ```
 
@@ -46,8 +47,8 @@ app.use(logger());
 
 Blocks connections from specific IP addresses.
 
-```ts
-import { denylist } from "fumi/plugins/denylist";
+```ts title="server.ts"
+import { denylist } from "@puiusabin/fumi/plugins/denylist";
 app.use(denylist(["1.2.3.4"]));
 ```
 
@@ -55,8 +56,8 @@ app.use(denylist(["1.2.3.4"]));
 
 Rejects mail from specific sender domains.
 
-```ts
-import { senderBlock } from "fumi/plugins/sender-block";
+```ts title="server.ts"
+import { senderBlock } from "@puiusabin/fumi/plugins/sender-block";
 app.use(senderBlock(["spam.example"]));
 ```
 
@@ -64,8 +65,8 @@ app.use(senderBlock(["spam.example"]));
 
 Only accepts recipients whose domain is in an allowed list.
 
-```ts
-import { rcptFilter } from "fumi/plugins/rcpt-filter";
+```ts title="server.ts"
+import { rcptFilter } from "@puiusabin/fumi/plugins/rcpt-filter";
 app.use(rcptFilter(["mycompany.com"]));
 ```
 
@@ -73,8 +74,8 @@ app.use(rcptFilter(["mycompany.com"]));
 
 Rejects messages that exceed a byte limit. Pair with `FumiOptions.size`.
 
-```ts
-import { maxSize } from "fumi/plugins/max-size";
+```ts title="server.ts"
+import { maxSize } from "@puiusabin/fumi/plugins/max-size";
 
 const app = new Fumi({ size: 10_000_000 });
 app.use(maxSize(10_000_000));
@@ -84,8 +85,8 @@ app.use(maxSize(10_000_000));
 
 Rejects `MAIL FROM` on unencrypted connections (STARTTLS not completed).
 
-```ts
-import { requireTls } from "fumi/plugins/require-tls";
+```ts title="server.ts"
+import { requireTls } from "@puiusabin/fumi/plugins/require-tls";
 app.use(requireTls());
 ```
 
@@ -93,7 +94,7 @@ app.use(requireTls());
 
 Plugins are factory functions — return a `Plugin` from a function that takes options.
 
-```ts
+```ts title="rate-limit.ts"
 import type { Plugin } from "@puiusabin/fumi";
 
 export function rateLimit(opts: { max: number; windowMs: number }): Plugin {

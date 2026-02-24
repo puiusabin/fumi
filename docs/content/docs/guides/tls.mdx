@@ -1,17 +1,20 @@
 ---
 title: TLS
 description: Configure STARTTLS and implicit TLS (SMTPS) in fumi.
+icon: Lock
 ---
 
 fumi supports both TLS modes via `FumiOptions`, which pass directly to `smtp-server`.
 
-## STARTTLS — port 587
+## Modes
+
+### STARTTLS — port 587
 
 The server advertises `STARTTLS` in the `EHLO` response. The client upgrades before sending mail. After upgrade, `ctx.session.secure === true`.
 
-```ts
+```ts title="server.ts"
 import { Fumi } from "@puiusabin/fumi";
-import { requireTls } from "fumi/plugins/require-tls";
+import { requireTls } from "@puiusabin/fumi/plugins/require-tls";
 
 const app = new Fumi({
   key: Bun.file("server.key").arrayBuffer(),
@@ -25,11 +28,11 @@ app.use(requireTls());
 await app.listen(587);
 ```
 
-## Implicit TLS / SMTPS — port 465
+### Implicit TLS / SMTPS — port 465
 
 The connection is TLS from the start. No `STARTTLS` command.
 
-```ts
+```ts title="server.ts"
 const app = new Fumi({
   secure: true,
   key: Bun.file("server.key").arrayBuffer(),
@@ -40,11 +43,13 @@ const app = new Fumi({
 await app.listen(465);
 ```
 
-## Protocol-level enforcement
+## Enforcement
+
+### Protocol-level
 
 Set `requireTLS: true` in options to let `smtp-server` reject `MAIL FROM` at the protocol level before middleware runs. This is simpler but less customizable than the `requireTls()` plugin.
 
-```ts
+```ts title="server.ts"
 const app = new Fumi({
   key: Bun.file("server.key").arrayBuffer(),
   cert: Bun.file("server.cert").arrayBuffer(),
@@ -52,7 +57,13 @@ const app = new Fumi({
 });
 ```
 
+### Middleware-level
+
+For middleware-level enforcement with custom error messages, use the `requireTls()` plugin shown in the STARTTLS example above. It runs in `onMailFrom` and gives you full control over the rejection code and message.
+
 ## Local development
+
+### Generating a certificate
 
 Generate a self-signed certificate with `mkcert`:
 
@@ -63,11 +74,16 @@ mkcert localhost
 # produces: localhost.pem + localhost-key.pem
 ```
 
-Then pass them to `FumiOptions`:
+### Passing to FumiOptions
 
-```ts
+```ts title="server.ts"
 const app = new Fumi({
   key: await Bun.file("localhost-key.pem").text(),
   cert: await Bun.file("localhost.pem").text(),
 });
 ```
+
+<Callout type="info">
+  `mkcert` certificates are trusted by your local machine only. Do not use them
+  in production — get a certificate from a public CA (e.g. Let's Encrypt).
+</Callout>

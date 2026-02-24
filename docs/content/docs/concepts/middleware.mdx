@@ -1,11 +1,12 @@
 ---
 title: Middleware
 description: How fumi's per-phase middleware system works.
+icon: Filter
 ---
 
 Middleware in fumi follows the koa-compose pattern: `(ctx, next) => Promise<void>`.
 
-```ts
+```ts title="server.ts"
 app.onMailFrom(async (ctx, next) => {
   // runs before the next middleware
   console.log("from:", ctx.address.address);
@@ -14,11 +15,13 @@ app.onMailFrom(async (ctx, next) => {
 });
 ```
 
-## Chaining
+## Registering handlers
+
+### Chaining
 
 Register multiple handlers by calling the same method multiple times. They execute in registration order.
 
-```ts
+```ts title="server.ts"
 app.onConnect(async (ctx, next) => {
   console.log("first");
   await next();
@@ -30,11 +33,13 @@ app.onConnect(async (ctx, next) => {
 });
 ```
 
-## Short-circuiting
+Calling `next()` more than once in the same middleware throws an error — the compose implementation guards against this.
+
+### Short-circuiting
 
 Skip `next()` to stop the chain without an error. The phase will still succeed from the client's perspective.
 
-```ts
+```ts title="server.ts"
 app.onMailFrom(async (ctx, next) => {
   if (cached(ctx.address.address)) {
     // skip further processing, accept immediately
@@ -44,11 +49,13 @@ app.onMailFrom(async (ctx, next) => {
 });
 ```
 
-## Rejection
+## Flow control
+
+### Rejection
 
 Call `ctx.reject()` to send an SMTP error response and stop the chain. It throws internally — `never` return type.
 
-```ts
+```ts title="server.ts"
 app.onRcptTo(async (ctx, next) => {
   const domain = ctx.address.address.split("@")[1] ?? "";
   if (!allowedDomains.has(domain)) {
@@ -58,11 +65,11 @@ app.onRcptTo(async (ctx, next) => {
 });
 ```
 
-## Auth middleware
+### Auth phase
 
 `onAuth` is the only phase with `ctx.accept(user)`. If the chain completes without calling `accept()` or `reject()`, the server returns 535.
 
-```ts
+```ts title="server.ts"
 app.onAuth(async (ctx, next) => {
   const user = await db.verifyCredentials(
     ctx.credentials.username,

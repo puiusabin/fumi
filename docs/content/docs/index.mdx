@@ -1,6 +1,7 @@
 ---
 title: Introduction
 description: Modern, ultrafast lightweight SMTP Server.
+icon: BookOpen
 ---
 
 fumi is an SMTP server framework built for Bun. It wraps [smtp-server](https://www.npmjs.com/package/smtp-server) with a koa-style middleware system and a simple plugin API.
@@ -22,6 +23,8 @@ await app.listen(2525);
 
 ## Why fumi?
 
+### Compared to Haraka
+
 [Haraka](https://haraka.github.io/) is the closest prior art — a plugin-based SMTP server for Node.js. fumi differs in a few ways:
 
 - Built for Bun, not Node.js
@@ -30,6 +33,8 @@ await app.listen(2525);
 - `ctx.reject()` returns `never` — the compiler enforces control flow
 
 ## Design
+
+### SMTP phases
 
 Each SMTP phase gets its own independent middleware stack:
 
@@ -41,5 +46,7 @@ Each SMTP phase gets its own independent middleware stack:
 | RCPT TO | `onRcptTo` | `RcptToContext` |
 | DATA | `onData` | `DataContext` |
 | Close | `onClose` | `CloseContext` |
+
+### Independent stacks
 
 Phases are independent — a single global middleware chain would require unsafe union types across all contexts.

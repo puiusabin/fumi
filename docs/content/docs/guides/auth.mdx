@@ -1,11 +1,12 @@
 ---
 title: Authentication
 description: Handle SMTP authentication with PLAIN and LOGIN methods.
+icon: Shield
 ---
 
 SMTP auth runs in the `onAuth` phase. The client sends credentials, and your middleware decides whether to accept or reject them.
 
-```ts
+```ts title="server.ts"
 app.onAuth(async (ctx, next) => {
   if (ctx.credentials.username === "relay" && ctx.credentials.password === "secret") {
     ctx.accept({ username: ctx.credentials.username });
@@ -25,9 +26,14 @@ app.onAuth(async (ctx, next) => {
 | `password` | `string` | The password the client sent |
 | `validatePassword(pw)` | `(pw: string) => boolean` | Constant-time comparison helper |
 
-Use `validatePassword` instead of `===` when comparing passwords to avoid timing attacks:
+<Callout type="warn">
+  Use `validatePassword` instead of `===` when comparing passwords.
+  String equality short-circuits on the first mismatched character, which leaks
+  information about how close a guess was. `validatePassword` always takes the
+  same amount of time regardless of input.
+</Callout>
 
-```ts
+```ts title="server.ts"
 if (!ctx.credentials.validatePassword(storedHash)) {
   ctx.reject("Bad credentials", 535);
 }
@@ -39,7 +45,7 @@ Pass any value to `ctx.accept()`. It becomes available as `session.user` in all 
 
 If the chain completes without calling `accept()` or `reject()`, the server automatically responds with 535.
 
-```ts
+```ts title="server.ts"
 app.onAuth(async (ctx, next) => {
   const user = await db.users.findByUsername(ctx.credentials.username);
   if (!user || !ctx.credentials.validatePassword(user.passwordHash)) {
@@ -50,11 +56,11 @@ app.onAuth(async (ctx, next) => {
 });
 ```
 
-## Checking auth in downstream middleware
+## Using auth downstream
 
 Read `session.user` in any phase that runs after `onAuth`.
 
-```ts
+```ts title="server.ts"
 type AuthUser = { id: number; plan: "free" | "pro" };
 
 app.onData(async (ctx, next) => {
@@ -66,24 +72,30 @@ app.onData(async (ctx, next) => {
 });
 ```
 
-## Auth over plain TCP
+## Configuration
+
+### Auth over plain TCP
 
 By default, `smtp-server` refuses AUTH commands on unencrypted connections when STARTTLS is advertised. For local development or internal networks where TLS is handled externally, set `allowInsecureAuth: true`:
 
-```ts
+```ts title="server.ts"
 const app = new Fumi({
   allowInsecureAuth: true,
   authOptional: false,
 });
 ```
 
-Do not use this in production unless your server sits behind a TLS-terminating proxy.
+<Callout type="warn">
+  Do not use `allowInsecureAuth` in production unless your server sits behind a
+  TLS-terminating proxy. Credentials sent over plain TCP are visible to anyone
+  on the network path.
+</Callout>
 
-## Skipping auth entirely
+### Skipping auth entirely
 
 Set `authOptional: true` to allow unauthenticated clients. The `onAuth` phase is still available — it just won't be required.
 
-```ts
+```ts title="server.ts"
 const app = new Fumi({ authOptional: true });
 ```
 
@@ -91,7 +103,7 @@ When auth is skipped, `session.user` stays `undefined` in downstream phases.
 
 ## Database lookup example
 
-```ts
+```ts title="server.ts"
 import { Fumi } from "@puiusabin/fumi";
 
 type User = { id: number; username: string; passwordHash: string };

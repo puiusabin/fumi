@@ -1,9 +1,13 @@
 ---
 title: Getting Started
 description: Install fumi and send your first SMTP session.
+icon: Rocket
 ---
 
-## Installation
+<Steps>
+<Step>
+
+## Install
 
 <Tabs items={['bun', 'npm', 'pnpm', 'yarn']}>
   <Tab value="bun">
@@ -28,9 +32,12 @@ description: Install fumi and send your first SMTP session.
   </Tab>
 </Tabs>
 
-## Minimal server
+</Step>
+<Step>
 
-```ts
+## Create a server
+
+```ts title="server.ts"
 import { Fumi } from "@puiusabin/fumi";
 
 const app = new Fumi({ authOptional: true });
@@ -49,17 +56,27 @@ await app.listen(2525);
 console.log("SMTP server listening on port 2525");
 ```
 
-Test it with netcat:
+</Step>
+<Step>
+
+## Test it
+
+Send a message with netcat:
 
 ```sh
 printf "EHLO test\r\nMAIL FROM:<sender@example.com>\r\nRCPT TO:<you@example.com>\r\nDATA\r\nSubject: test\r\n\r\nHello\r\n.\r\nQUIT\r\n" | nc localhost 2525
 ```
 
-## Rejecting connections
+</Step>
+</Steps>
+
+## Next steps
+
+### Rejecting connections
 
 `ctx.reject()` throws an `SMTPError` internally and has return type `never`. The TypeScript compiler treats any code after it as unreachable.
 
-```ts
+```ts title="server.ts"
 app.onMailFrom(async (ctx, next) => {
   if (ctx.address.address.endsWith("@blocked.example")) {
     ctx.reject("Domain blocked", 550);
@@ -69,11 +86,11 @@ app.onMailFrom(async (ctx, next) => {
 });
 ```
 
-## Closing the server
+### Closing the server
 
 `app.listen()` returns a `Promise<void>`. `app.close()` does too.
 
-```ts
+```ts title="server.ts"
 const app = new Fumi({ authOptional: true });
 await app.listen(2525);
 
