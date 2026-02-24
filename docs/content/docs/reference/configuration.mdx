@@ -1,0 +1,212 @@
+---
+title: Configuration
+description: Complete FumiOptions reference for the Fumi constructor.
+icon: Settings
+---
+
+All options are passed to the `Fumi` constructor and forwarded to the underlying `smtp-server` instance.
+
+```ts title="server.ts"
+const app = new Fumi({
+  secure: false,
+  authOptional: true,
+  size: 10_000_000,
+  banner: "My SMTP Server",
+});
+```
+
+All fields are optional.
+
+## TLS
+
+### secure
+
+**Type:** `boolean` **Default:** `false`
+
+When `true`, the server expects a TLS connection from the start (SMTPS, port 465). No `STARTTLS` command is issued — the client must connect with TLS already active.
+
+For STARTTLS (port 587), leave `secure: false` and provide `key` and `cert`.
+
+### key
+
+**Type:** `string | Buffer`
+
+Private key for the TLS certificate. Can be a PEM string or a `Buffer`.
+
+```ts title="server.ts"
+const app = new Fumi({
+  key: await Bun.file("server-key.pem").text(),
+  cert: await Bun.file("server-cert.pem").text(),
+});
+```
+
+### cert
+
+**Type:** `string | Buffer`
+
+TLS certificate in PEM format. Required alongside `key` to enable TLS.
+
+### ca
+
+**Type:** `string | Buffer`
+
+Certificate Authority bundle. Use this for mutual TLS (mTLS) or custom CA chains.
+
+### requireTLS
+
+**Type:** `boolean` **Default:** `false`
+
+When `true`, the server rejects `MAIL FROM` commands from clients that have not completed STARTTLS. This enforces TLS at the protocol level, before any middleware runs.
+
+For middleware-level enforcement (with custom error messages), use the `requireTls()` plugin instead.
+
+## Authentication
+
+### authOptional
+
+**Type:** `boolean` **Default:** `false`
+
+When `true`, clients can skip authentication entirely. `session.user` will be `undefined` in all phases for unauthenticated sessions.
+
+### authMethods
+
+**Type:** `string[]` **Default:** `["PLAIN", "LOGIN"]`
+
+The list of AUTH mechanisms advertised in the `EHLO` response. Clients will only attempt the methods listed here.
+
+```ts title="server.ts"
+const app = new Fumi({
+  authMethods: ["PLAIN"],
+});
+```
+
+### allowInsecureAuth
+
+**Type:** `boolean` **Default:** `false`
+
+Allows AUTH commands on unencrypted connections. By default, `smtp-server` blocks this when STARTTLS is available.
+
+<Callout type="warn">
+  Only use this if your server sits behind a TLS-terminating proxy. Credentials
+  sent over plain TCP are visible to anyone on the network path.
+</Callout>
+
+## Limits
+
+### size
+
+**Type:** `number`
+
+Maximum accepted message size in bytes. The server advertises this value in the `EHLO` response as `SIZE=<n>`. When a client sends a message that exceeds this limit, `ctx.sizeExceeded` is set to `true` in `onData`.
+
+Pair with the `maxSize()` plugin to reject oversized messages:
+
+```ts title="server.ts"
+import { maxSize } from "@puiusabin/fumi/plugins/max-size";
+
+const app = new Fumi({ size: 10_000_000 });
+app.use(maxSize(10_000_000));
+```
+
+### maxClients
+
+**Type:** `number`
+
+Maximum number of simultaneous client connections. New connections beyond this limit are rejected immediately.
+
+### closeTimeout
+
+**Type:** `number`
+
+Time in milliseconds to wait for a client to close the connection gracefully before forcefully terminating it. Applies when the server is shutting down via `app.close()`.
+
+## Behavior
+
+### banner
+
+**Type:** `string`
+
+Custom greeting text sent to clients after the initial `220` response. Defaults to the hostname.
+
+```ts title="server.ts"
+const app = new Fumi({
+  banner: "mail.example.com ESMTP ready",
+});
+```
+
+### disabledCommands
+
+**Type:** `string[]`
+
+List of SMTP commands to disable entirely. Clients that send a disabled command will receive a 502 response.
+
+```ts title="server.ts"
+// Disable VRFY and EXPN
+const app = new Fumi({
+  disabledCommands: ["VRFY", "EXPN"],
+});
+```
+
+### logger
+
+**Type:** `boolean` **Default:** `false`
+
+When `true`, enables the built-in `smtp-server` debug logger, which prints low-level protocol traffic to stdout. Useful for debugging connection issues.
+
+For structured application-level logging, use the `logger()` plugin instead.
+
+## Protocol extensions
+
+### hideSTARTTLS
+
+**Type:** `boolean` **Default:** `false`
+
+When `true`, suppresses `STARTTLS` from the `EHLO` capability list even if TLS certificates are configured. Clients won't attempt to upgrade to TLS.
+
+### hideREQUIRETLS
+
+**Type:** `boolean` **Default:** `false`
+
+When `true`, hides the `REQUIRETLS` extension from the `EHLO` response.
+
+### hidePIPELINING
+
+**Type:** `boolean` **Default:** `false`
+
+When `true`, hides the `PIPELINING` extension from `EHLO`. Clients will send commands one at a time instead of batching them.
+
+### hideENHANCEDSTATUSCODES
+
+**Type:** `boolean` **Default:** `false`
+
+When `true`, hides the `ENHANCEDSTATUSCODES` extension. SMTP responses will use basic 3-digit codes rather than the extended `x.y.z` format.
+
+### hideDSN
+
+**Type:** `boolean` **Default:** `false`
+
+When `true`, hides the `DSN` (Delivery Status Notification) extension from `EHLO`.
+
+### lmtp
+
+**Type:** `boolean` **Default:** `false`
+
+Switches the server to LMTP mode (Local Mail Transfer Protocol, RFC 2033). LMTP is a variant of SMTP used for final delivery to a mail store, typically over a Unix socket rather than TCP.
+
+<Callout type="warn">
+  In LMTP mode, the server uses `LHLO` instead of `EHLO` and requires a
+  separate response per recipient. Standard SMTP clients will not connect
+  to an LMTP server.
+</Callout>
+
+### useXClient
+
+**Type:** `boolean` **Default:** `false`
+
+Enables the `XCLIENT` extension, which allows a trusted proxy to override client connection information (IP, hostname, etc.) on behalf of the real sender.
+
+### useXForward
+
+**Type:** `boolean` **Default:** `false`
+
+Enables the `XFORWARD` extension, which lets a proxy pass original sender information through to the receiving server. Similar to `useXClient` but follows a different protocol.

@@ -1,0 +1,7 @@
+{
+  "title": "Reference",
+  "icon": "Code",
+  "collapsible": true,
+  "defaultOpen": true,
+  "pages": ["configuration"]
+}
