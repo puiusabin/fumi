@@ -14,6 +14,8 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/puiusabin/fumi)](https://github.com/puiusabin/fumi/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/puiusabin/fumi)](https://github.com/puiusabin/fumi/commits/main)
 
+fumi - _**means letter✉️ in Japanese**_ - is a small, simple, and ultrafast SMTP Server framework built on Bun.
+
 ```ts
 import { Fumi } from "@puiusabin/fumi";
 
@@ -38,10 +40,10 @@ bun add @puiusabin/fumi
 ## Features
 
 - **Ultrafast** 🚀 - Runs natively on Bun. No adapter layer, no Node.js compat overhead.
-- **Lightweight** 🪶 - Tiny core. One runtime dependency (`smtp-server`). Zero framework lock-in.
+- **Lightweight** 🪶 - Tiny core. One runtime dependency (`smtp-server`).
 - **Middleware** 🔗 - koa-style `(ctx, next)` chains per SMTP phase: connect, auth, mailFrom, rcptTo, data, close.
 - **Plugin system** 🔌 - A plugin is just `(app: Fumi) => void`. No registry, no lifecycle hooks.
-- **TypeScript-first** 🔷 - Strict types throughout. `ctx.reject()` returns `never` — the compiler sees it as unreachable.
+- **Delightful DX** 😃 - Super clean APIs. First-class TypeScript support.
 
 ## Documentation
 
