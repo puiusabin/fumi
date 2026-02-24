@@ -1,5 +1,6 @@
 {
   "title": "Core Concepts",
+  "icon": "Layers",
   "collapsible": true,
   "defaultOpen": true,
   "pages": ["middleware", "session", "errors"]
