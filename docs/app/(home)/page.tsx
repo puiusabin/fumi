@@ -9,8 +9,31 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 py-20 lg:py-28 flex flex-col lg:flex-row items-start gap-12 lg:gap-16">
           <div className="flex flex-col gap-6 flex-1 min-w-0">
             <div className="flex items-center gap-3">
-              <span className="text-5xl leading-none text-fd-primary">文</span>
-              <h1 className="text-4xl font-bold tracking-tight text-fd-foreground">
+              <svg
+                width="60"
+                height="60"
+                viewBox="0 0 60 60"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+                className="text-fd-primary leading-none"
+              >
+                <text
+                  x="50%"
+                  y="50%"
+                  dominantBaseline="central"
+                  textAnchor="middle"
+                  fontFamily="Inter, sans-serif"
+                  fontSize="60"
+                  fontWeight="500"
+                  fill="currentColor"
+                >
+                  文
+                </text>
+              </svg>
+              <h1
+                className="text-5xl tracking-tight text-fd-foreground"
+                style={{ fontFamily: "var(--font-jacques)", fontWeight: 400 }}
+              >
                 fumi
               </h1>
             </div>
@@ -22,7 +45,7 @@ export default function HomePage() {
 
             <div className="flex gap-3">
               <Link
-                href="/docs/getting-started"
+                href="/docs"
                 className="px-5 py-2.5 rounded-lg bg-fd-primary text-fd-primary-foreground font-medium text-sm hover:bg-fd-primary/90 transition-colors"
               >
                 Get Started
