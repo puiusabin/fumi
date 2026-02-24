@@ -4,7 +4,7 @@ description: Modern, ultrafast lightweight SMTP Server.
 icon: BookOpen
 ---
 
-fumi is an SMTP server framework built for Bun. It wraps [smtp-server](https://www.npmjs.com/package/smtp-server) with a koa-style middleware system and a simple plugin API.
+fumi - _**means letter✉️ in Japanese**_ - is a small, simple, and ultrafast SMTP Server framework built on Bun.
 
 ```ts
 import { Fumi } from "@puiusabin/fumi";
@@ -18,8 +18,53 @@ app.onMailFrom(async (ctx, next) => {
   await next();
 });
 
-await app.listen(2525);
+await app.listen(25);
 ```
+
+## Quick Start
+
+<Tabs items={['bun', 'npm', 'pnpm', 'yarn']}>
+  <Tab value="bun">
+    ```sh
+    bun add @puiusabin/fumi
+    ```
+  </Tab>
+  <Tab value="npm">
+    ```sh
+    npm install @puiusabin/fumi
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```sh
+    pnpm add @puiusabin/fumi
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```sh
+    yarn add @puiusabin/fumi
+    ```
+  </Tab>
+</Tabs>
+
+## Features
+
+- **Ultrafast** 🚀 - Runs natively on Bun. No adapter layer, no Node.js compat overhead.
+- **Lightweight** 🪶 - Tiny core. One runtime dependency (`smtp-server`).
+- **Middleware** 🔗 - koa-style `(ctx, next)` chains per SMTP phase: connect, auth, mailFrom, rcptTo, data, close.
+- **Plugin system** 🔌 - A plugin is just `(app: Fumi) => void`. No registry, no lifecycle hooks.
+- **Delightful DX** 😃 - Super clean APIs. First-class TypeScript support.
+
+
+## Use Cases
+
+fumi is a minimal SMTP server framework for Bun. It handles the full SMTP lifecycle through composable middleware and runs anywhere Bun runs. Here are some examples of use cases.
+
+- Inbound email processing
+- Development mail catcher
+- Email gateway
+- Spam filter layer
+- Transactional email relay
+- Custom mail server
 
 ## Why fumi?
 
