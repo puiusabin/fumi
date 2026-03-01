@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/puiusabin/fumi/compare/fumi-v0.2.0...fumi-v0.3.0) (2026-03-01)
+
+
+### Features
+
+* replace smtp-server with bun-smtp ([aac67c7](https://github.com/puiusabin/fumi/commit/aac67c76d3c46bd52d4c2595323af1aa1325f883))
+
+
+### Bug Fixes
+
+* resolve biome and tsc failures ([7c32d7e](https://github.com/puiusabin/fumi/commit/7c32d7ee1d20a52a224c2b949d87b2d5deec5285))
+
 ## [0.2.0](https://github.com/puiusabin/fumi/compare/fumi-v0.1.0...fumi-v0.2.0) (2026-03-01)
 
 
