@@ -42,6 +42,6 @@
 		"typescript": "^5"
 	},
 	"dependencies": {
-		"smtp-server": "^3.18.1"
+		"bun-smtp": "^0.3.0"
 	}
 }

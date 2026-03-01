@@ -1,4 +1,3 @@
-import type { Readable } from "node:stream";
 import type { Fumi } from "./fumi.js";
 
 export class SMTPError extends Error {
@@ -65,7 +64,7 @@ export interface RcptToContext {
 
 export interface DataContext {
 	session: Session;
-	stream: Readable;
+	stream: ReadableStream<Uint8Array>;
 	sizeExceeded: boolean;
 	reject(message?: string, code?: number): never;
 }
@@ -108,7 +107,6 @@ export interface FumiOptions {
 	lmtp?: boolean;
 	useXClient?: boolean;
 	useXForward?: boolean;
-	logger?: boolean;
 
 	allowInsecureAuth?: boolean;
 	closeTimeout?: number;

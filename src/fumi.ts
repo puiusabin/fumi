@@ -1,5 +1,4 @@
-// @ts-expect-error — smtp-server ships no type declarations
-import { SMTPServer } from "smtp-server";
+import { SMTPServer, type DataStream } from "bun-smtp";
 import { compose } from "./compose.js";
 import {
 	type Address,
@@ -196,17 +195,16 @@ export class Fumi {
 
 		if (dataRunner) {
 			handlers.onData = (
-				stream: unknown,
+				stream: DataStream,
 				session: unknown,
 				callback: (err?: Error | null, message?: string) => void,
 			) => {
-				const typedStream = stream as DataContext["stream"] & {
-					sizeExceeded?: boolean;
-				};
 				const ctx: DataContext = {
 					session: session as Session,
-					stream: typedStream,
-					sizeExceeded: typedStream.sizeExceeded ?? false,
+					stream,
+					get sizeExceeded() {
+						return stream.sizeExceeded ?? false;
+					},
 					reject: makeReject(552),
 				};
 				dataRunner(ctx)
