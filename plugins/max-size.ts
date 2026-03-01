@@ -12,12 +12,12 @@ import type { Plugin } from "../index.js";
  * app.use(maxSize(1_000_000))
  */
 export function maxSize(bytes: number): Plugin {
-  return (app) => {
-    app.onData(async (ctx, next) => {
-      if (ctx.sizeExceeded) {
-        ctx.reject(`Message exceeds the maximum size of ${bytes} bytes`, 552);
-      }
-      await next();
-    });
-  };
+	return (app) => {
+		app.onData(async (ctx, next) => {
+			if (ctx.sizeExceeded) {
+				ctx.reject(`Message exceeds the maximum size of ${bytes} bytes`, 552);
+			}
+			await next();
+		});
+	};
 }
