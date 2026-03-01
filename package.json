@@ -4,7 +4,7 @@
   "description": "Bun-native SMTP server framework with composable middleware",
   "license": "MIT",
   "author": "Sabin Puiu <https://github.com/puiusabin>",
-  "homepage": "https://fumi.run",
+  "homepage": "https://fumi-smtp.vercel.app/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/puiusabin/fumi.git"

@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://fumi.run">
+  <a href="https://fumi-smtp.vercel.app/">
     <img src="https://raw.githubusercontent.com/puiusabin/fumi/main/docs/images/fumi-title.png" width="500" height="auto" alt="fumi"/>
   </a>
 </div>
@@ -47,7 +47,7 @@ bun add @puiusabin/fumi
 
 ## Documentation
 
-Full docs at [fumi.run](https://fumi.run).
+Full docs at [fumi.run](https://fumi-smtp.vercel.app/).
 
 ## Contributing
 
