@@ -7,12 +7,39 @@ on:
     branches: [main]
 
 jobs:
-  ci:
+  test:
+    name: Test (Bun ${{ matrix.bun-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        bun-version: ["latest", "1.2"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ matrix.bun-version }}
+      - run: bun install
+      - run: bun test
+
+  lint:
+    name: Lint & Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bunx biome ci .
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
       - run: bun install
       - run: bunx tsc --noEmit
-      - run: bun test
-      - run: bun run build
