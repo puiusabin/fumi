@@ -1,6 +1,11 @@
 import { afterEach, expect, test } from "bun:test";
-import net from "node:net";
 import { Fumi, SMTPError } from "./index.ts";
+import { denylist } from "./plugins/denylist.ts";
+import { logger } from "./plugins/logger.ts";
+import { maxSize } from "./plugins/max-size.ts";
+import { rcptFilter } from "./plugins/rcpt-filter.ts";
+import { requireTls } from "./plugins/require-tls.ts";
+import { senderBlock } from "./plugins/sender-block.ts";
 import { compose } from "./src/compose.ts";
 
 // Walk through an SMTP conversation over raw TCP.
@@ -9,34 +14,39 @@ import { compose } from "./src/compose.ts";
 // since the server only responds once after the final ".\r\n".
 function smtpTalk(port: number, commands: string[]): Promise<string[]> {
 	return new Promise((resolve, reject) => {
-		const socket = net.createConnection({ port, host: "127.0.0.1" });
 		const responses: string[] = [];
 		let buf = "";
 		let cmdIdx = 0;
 
-		function flush() {
-			while (true) {
-				const idx = buf.indexOf("\r\n");
-				if (idx === -1) break;
-				const line = buf.slice(0, idx);
-				buf = buf.slice(idx + 2);
-				if (!line) continue;
-				responses.push(line);
-				if (line[3] === "-") continue; // multi-line continuation
-				if (cmdIdx < commands.length) {
-					socket.write(`${commands[cmdIdx++]}\r\n`);
-				} else {
-					socket.end();
-				}
-			}
-		}
-
-		socket.on("data", (d) => {
-			buf += d.toString();
-			flush();
-		});
-		socket.on("end", () => resolve(responses));
-		socket.on("error", reject);
+		Bun.connect({
+			hostname: "127.0.0.1",
+			port,
+			socket: {
+				data(socket, data: Buffer) {
+					buf += data.toString();
+					while (true) {
+						const idx = buf.indexOf("\r\n");
+						if (idx === -1) break;
+						const line = buf.slice(0, idx);
+						buf = buf.slice(idx + 2);
+						if (!line) continue;
+						responses.push(line);
+						if (line[3] === "-") continue; // multi-line continuation
+						if (cmdIdx < commands.length) {
+							socket.write(`${commands[cmdIdx++]}\r\n`);
+						} else {
+							socket.end();
+						}
+					}
+				},
+				close() {
+					resolve(responses);
+				},
+				error(_, err) {
+					reject(err);
+				},
+			},
+		}).catch(reject);
 	});
 }
 
@@ -259,9 +269,9 @@ test("onData receives full message stream", async () => {
 	let receivedBody = "";
 
 	app.onData(async (ctx, next) => {
-		const chunks: Buffer[] = [];
+		const chunks: Uint8Array[] = [];
 		for await (const chunk of ctx.stream) {
-			chunks.push(chunk as Buffer);
+			chunks.push(chunk);
 		}
 		receivedBody = Buffer.concat(chunks).toString();
 		await next();
@@ -277,4 +287,170 @@ test("onData receives full message stream", async () => {
 		"QUIT",
 	]);
 	expect(receivedBody).toContain("Hello world");
+});
+
+test("onRcptTo middleware runs and reads address", async () => {
+	app = new Fumi({ authOptional: true });
+	let sawAddress = "";
+	app.onRcptTo(async (ctx, next) => {
+		sawAddress = ctx.address.address;
+		await next();
+	});
+	await app.listen(12519);
+
+	await smtpTalk(12519, [
+		"EHLO test",
+		"MAIL FROM:<sender@example.com>",
+		"RCPT TO:<recipient@example.com>",
+		"QUIT",
+	]);
+	expect(sawAddress).toBe("recipient@example.com");
+});
+
+test("onRcptTo middleware can reject with custom code", async () => {
+	app = new Fumi({ authOptional: true });
+	app.onRcptTo(async (ctx) => {
+		if (!ctx.address.address.endsWith("@allowed.example")) {
+			ctx.reject("Recipient not accepted", 550);
+		}
+	});
+	await app.listen(12520);
+
+	const responses = await smtpTalk(12520, [
+		"EHLO test",
+		"MAIL FROM:<sender@example.com>",
+		"RCPT TO:<bad@blocked.example>",
+		"QUIT",
+	]);
+	const rejectLine = responses.find((r) => code(r) === 550);
+	expect(rejectLine).toBeDefined();
+});
+
+test("onClose middleware fires after connection ends", async () => {
+	app = new Fumi({ authOptional: true });
+	let closeFired = false;
+	app.onClose(async () => {
+		closeFired = true;
+	});
+	await app.listen(12521);
+
+	await smtpTalk(12521, ["QUIT"]);
+	// onClose is fire-and-forget; give the server a tick to run it
+	await Bun.sleep(10);
+	expect(closeFired).toBe(true);
+});
+
+test("onAuth with no accept() call responds 535", async () => {
+	app = new Fumi({ authMethods: ["PLAIN"], allowInsecureAuth: true });
+	app.onAuth(async (_ctx, next) => {
+		// never calls ctx.accept()
+		await next();
+	});
+	await app.listen(12522);
+
+	const responses = await smtpTalk(12522, [
+		"EHLO test",
+		`AUTH PLAIN ${Buffer.from("\0user\0pass").toString("base64")}`,
+		"QUIT",
+	]);
+	const rejected = responses.find((r) => code(r) === 535);
+	expect(rejected).toBeDefined();
+});
+
+test("non-SMTPError thrown in middleware is bridged to 5xx", async () => {
+	app = new Fumi({ authOptional: true });
+	app.onConnect(async () => {
+		throw new Error("unexpected failure");
+	});
+	await app.listen(12523);
+
+	const responses = await smtpTalk(12523, []);
+	expect(code(responses[0] ?? "")).toBeGreaterThanOrEqual(500);
+});
+
+// --- plugins ---
+
+test("denylist blocks connections from listed IPs", async () => {
+	app = new Fumi({ authOptional: true });
+	app.use(denylist(["127.0.0.1"]));
+	await app.listen(12524);
+
+	const responses = await smtpTalk(12524, []);
+	expect(code(responses[0] ?? "")).toBe(550);
+});
+
+test("senderBlock rejects mail from blocked domain", async () => {
+	app = new Fumi({ authOptional: true });
+	app.use(senderBlock(["spam.example"]));
+	await app.listen(12525);
+
+	const responses = await smtpTalk(12525, [
+		"EHLO test",
+		"MAIL FROM:<attacker@spam.example>",
+		"QUIT",
+	]);
+	const rejectLine = responses.find((r) => code(r) === 550);
+	expect(rejectLine).toBeDefined();
+});
+
+test("rcptFilter rejects recipients outside allowed domains", async () => {
+	app = new Fumi({ authOptional: true });
+	app.use(rcptFilter(["mycompany.com"]));
+	await app.listen(12526);
+
+	const responses = await smtpTalk(12526, [
+		"EHLO test",
+		"MAIL FROM:<sender@example.com>",
+		"RCPT TO:<user@other.com>",
+		"QUIT",
+	]);
+	const rejectLine = responses.find((r) => code(r) === 550);
+	expect(rejectLine).toBeDefined();
+});
+
+test("requireTls rejects MAIL FROM on unencrypted connection", async () => {
+	app = new Fumi({ authOptional: true });
+	app.use(requireTls());
+	await app.listen(12527);
+
+	const responses = await smtpTalk(12527, [
+		"EHLO test",
+		"MAIL FROM:<sender@example.com>",
+		"QUIT",
+	]);
+	const rejectLine = responses.find((r) => code(r) === 530);
+	expect(rejectLine).toBeDefined();
+});
+
+test("maxSize rejects oversized messages", async () => {
+	app = new Fumi({ authOptional: true, size: 10 });
+	app.use(maxSize(10));
+	await app.listen(12528);
+
+	const responses = await smtpTalk(12528, [
+		"EHLO test",
+		"MAIL FROM:<sender@example.com>",
+		"RCPT TO:<recipient@example.com>",
+		"DATA",
+		"Subject: test\r\n\r\nThis body is definitely longer than ten bytes.\r\n.",
+		"QUIT",
+	]);
+	const rejectLine = responses.find((r) => code(r) === 552);
+	expect(rejectLine).toBeDefined();
+});
+
+test("logger plugin does not interfere with normal flow", async () => {
+	app = new Fumi({ authOptional: true });
+	app.use(logger());
+	await app.listen(12529);
+
+	const responses = await smtpTalk(12529, [
+		"EHLO test",
+		"MAIL FROM:<sender@example.com>",
+		"RCPT TO:<recipient@example.com>",
+		"QUIT",
+	]);
+	expect(code(responses[0] ?? "")).toBe(220);
+	const mailResponse = responses.find((r) => code(r) === 250 && responses.indexOf(r) > 1);
+	expect(mailResponse).toBeDefined();
 });
