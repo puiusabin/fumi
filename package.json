@@ -23,11 +23,14 @@
       "types": "./dist/plugins/*.d.ts"
     }
   },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "bun build index.ts ./plugins/*.ts --outdir dist --target node --packages external && tsc -p tsconfig.build.json",
+    "build": "bun build index.ts ./plugins/*.ts --outdir dist --target bun --packages external && tsc -p tsconfig.build.json",
     "docs:dev": "bun run --cwd docs dev",
     "docs:build": "bun run --cwd docs build"
   },
