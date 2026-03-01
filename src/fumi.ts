@@ -1,4 +1,4 @@
-import { SMTPServer, type DataStream } from "bun-smtp";
+import { type DataStream, SMTPServer } from "bun-smtp";
 import { compose } from "./compose.js";
 import {
 	type Address,
@@ -84,7 +84,11 @@ export class Fumi {
 		this._server = server;
 		return new Promise((resolve, reject) => {
 			server.on("error", reject);
-			server.listen(port, host, resolve);
+			if (host !== undefined) {
+				server.listen(port, host, resolve);
+			} else {
+				server.listen(port, resolve);
+			}
 		});
 	}
 

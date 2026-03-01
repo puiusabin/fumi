@@ -451,6 +451,8 @@ test("logger plugin does not interfere with normal flow", async () => {
 		"QUIT",
 	]);
 	expect(code(responses[0] ?? "")).toBe(220);
-	const mailResponse = responses.find((r) => code(r) === 250 && responses.indexOf(r) > 1);
+	const mailResponse = responses.find(
+		(r) => code(r) === 250 && responses.indexOf(r) > 1,
+	);
 	expect(mailResponse).toBeDefined();
 });
