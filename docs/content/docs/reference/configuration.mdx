@@ -4,7 +4,7 @@ description: Complete FumiOptions reference for the Fumi constructor.
 icon: Settings
 ---
 
-All options are passed to the `Fumi` constructor and forwarded to the underlying `smtp-server` instance.
+All options are passed to the `Fumi` constructor and forwarded to the underlying `bun-smtp` instance.
 
 ```ts title="server.ts"
 const app = new Fumi({
@@ -84,7 +84,7 @@ const app = new Fumi({
 
 **Type:** `boolean` **Default:** `false`
 
-Allows AUTH commands on unencrypted connections. By default, `smtp-server` blocks this when STARTTLS is available.
+Allows AUTH commands on unencrypted connections. By default, the server blocks this when STARTTLS is available.
 
 <Callout type="warn">
   Only use this if your server sits behind a TLS-terminating proxy. Credentials
@@ -146,14 +146,6 @@ const app = new Fumi({
   disabledCommands: ["VRFY", "EXPN"],
 });
 ```
-
-### logger
-
-**Type:** `boolean` **Default:** `false`
-
-When `true`, enables the built-in `smtp-server` debug logger, which prints low-level protocol traffic to stdout. Useful for debugging connection issues.
-
-For structured application-level logging, use the `logger()` plugin instead.
 
 ## Protocol extensions
 

@@ -47,7 +47,7 @@ bun add @puiusabin/fumi
 
 ## Documentation
 
-Full docs at [fumi.run](https://fumi-smtp.vercel.app/).
+Full docs at [fumi-smtp.vercel.app](https://fumi-smtp.vercel.app/).
 
 ## Contributing
 

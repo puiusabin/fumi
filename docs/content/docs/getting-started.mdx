@@ -24,9 +24,9 @@ import { Fumi } from "@puiusabin/fumi";
 const app = new Fumi({ authOptional: true });
 
 app.onData(async (ctx, next) => {
-  const chunks: Buffer[] = [];
+  const chunks: Uint8Array[] = [];
   for await (const chunk of ctx.stream) {
-    chunks.push(chunk as Buffer);
+    chunks.push(chunk);
   }
   const raw = Buffer.concat(chunks).toString();
   console.log(raw);
