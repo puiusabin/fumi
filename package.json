@@ -1,6 +1,6 @@
 {
 	"name": "@puiusabin/fumi",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "Bun-native SMTP server framework with composable middleware",
 	"license": "MIT",
 	"author": "Sabin Puiu <https://github.com/puiusabin>",
