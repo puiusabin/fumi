@@ -97,17 +97,26 @@ export class Fumi {
   }
 
   private _buildServer(): InstanceType<typeof SMTPServer> {
-    const connectRunner = compose(this._connect);
-    const authRunner = compose(this._auth);
-    const mailFromRunner = compose(this._mailFrom);
-    const rcptToRunner = compose(this._rcptTo);
-    const dataRunner = compose(this._data);
-    const closeRunner = compose(this._close);
+    // Only build runners and register handlers for phases that have middleware.
+    // When a handler is absent, smtp-server falls back to its built-in default
+    // (setImmediate + callback), avoiding the Promise allocation overhead of an
+    // empty middleware chain.
+    const connectRunner =
+      this._connect.length > 0 ? compose(this._connect) : null;
+    const authRunner = this._auth.length > 0 ? compose(this._auth) : null;
+    const mailFromRunner =
+      this._mailFrom.length > 0 ? compose(this._mailFrom) : null;
+    const rcptToRunner = this._rcptTo.length > 0 ? compose(this._rcptTo) : null;
+    const dataRunner = this._data.length > 0 ? compose(this._data) : null;
+    const closeRunner = this._close.length > 0 ? compose(this._close) : null;
 
-    return new SMTPServer({
-      ...this._options,
+    const handlers: Record<string, unknown> = {};
 
-      onConnect(session: unknown, callback: (err?: Error) => void) {
+    if (connectRunner) {
+      handlers.onConnect = (
+        session: unknown,
+        callback: (err?: Error) => void,
+      ) => {
         const ctx: ConnectContext = {
           session: session as Session,
           reject: makeReject(550),
@@ -115,13 +124,15 @@ export class Fumi {
         connectRunner(ctx)
           .then(() => callback())
           .catch((err) => callback(bridgeError(err)));
-      },
+      };
+    }
 
-      onAuth(
+    if (authRunner) {
+      handlers.onAuth = (
         auth: unknown,
         session: unknown,
         callback: (err: Error | null, result?: { user: unknown }) => void,
-      ) {
+      ) => {
         let acceptedUser: unknown;
         let wasAccepted = false;
 
@@ -146,13 +157,15 @@ export class Fumi {
             }
           })
           .catch((err) => callback(bridgeError(err)));
-      },
+      };
+    }
 
-      onMailFrom(
+    if (mailFromRunner) {
+      handlers.onMailFrom = (
         address: unknown,
         session: unknown,
         callback: (err?: Error) => void,
-      ) {
+      ) => {
         const ctx: MailFromContext = {
           session: session as Session,
           address: address as Address,
@@ -161,13 +174,15 @@ export class Fumi {
         mailFromRunner(ctx)
           .then(() => callback())
           .catch((err) => callback(bridgeError(err)));
-      },
+      };
+    }
 
-      onRcptTo(
+    if (rcptToRunner) {
+      handlers.onRcptTo = (
         address: unknown,
         session: unknown,
         callback: (err?: Error) => void,
-      ) {
+      ) => {
         const ctx: RcptToContext = {
           session: session as Session,
           address: address as Address,
@@ -176,13 +191,15 @@ export class Fumi {
         rcptToRunner(ctx)
           .then(() => callback())
           .catch((err) => callback(bridgeError(err)));
-      },
+      };
+    }
 
-      onData(
+    if (dataRunner) {
+      handlers.onData = (
         stream: unknown,
         session: unknown,
         callback: (err?: Error | null, message?: string) => void,
-      ) {
+      ) => {
         const typedStream = stream as DataContext["stream"] & {
           sizeExceeded?: boolean;
         };
@@ -195,14 +212,17 @@ export class Fumi {
         dataRunner(ctx)
           .then(() => callback())
           .catch((err) => callback(bridgeError(err)));
-      },
+      };
+    }
 
-      onClose(session: unknown) {
+    if (closeRunner) {
+      handlers.onClose = (session: unknown) => {
         const ctx: CloseContext = { session: session as Session };
-        closeRunner(ctx).catch(() => {
-          // onClose is fire-and-forget; errors are swallowed silently
-        });
-      },
-    });
+        // onClose is fire-and-forget; errors are swallowed silently.
+        closeRunner(ctx).catch(() => {});
+      };
+    }
+
+    return new SMTPServer({ ...this._options, ...handlers });
   }
 }
