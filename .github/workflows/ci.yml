@@ -31,7 +31,7 @@ jobs:
         with:
           bun-version: latest
       - run: bun install
-      - run: bunx biome ci src plugins index.ts fumi.test.ts
+      - run: bunx biome ci .
 
   typecheck:
     name: Type Check
