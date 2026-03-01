@@ -1,47 +1,47 @@
 {
-  "name": "@puiusabin/fumi",
-  "version": "0.2.0",
-  "description": "Bun-native SMTP server framework with composable middleware",
-  "license": "MIT",
-  "author": "Sabin Puiu <https://github.com/puiusabin>",
-  "homepage": "https://fumi-smtp.vercel.app/",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/puiusabin/fumi.git"
-  },
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./plugins/*": {
-      "import": "./dist/plugins/*.js",
-      "types": "./dist/plugins/*.d.ts"
-    }
-  },
-  "engines": {
-    "bun": ">=1.0.0"
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "bun build index.ts ./plugins/*.ts --outdir dist --target bun --packages external && tsc -p tsconfig.build.json",
-    "docs:dev": "bun run --cwd docs dev",
-    "docs:build": "bun run --cwd docs build"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.4.4",
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "dependencies": {
-    "smtp-server": "^3.18.1"
-  }
+	"name": "@puiusabin/fumi",
+	"version": "0.2.0",
+	"description": "Bun-native SMTP server framework with composable middleware",
+	"license": "MIT",
+	"author": "Sabin Puiu <https://github.com/puiusabin>",
+	"homepage": "https://fumi-smtp.vercel.app/",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/puiusabin/fumi.git"
+	},
+	"type": "module",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		},
+		"./plugins/*": {
+			"import": "./dist/plugins/*.js",
+			"types": "./dist/plugins/*.d.ts"
+		}
+	},
+	"engines": {
+		"bun": ">=1.0.0"
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "bun build index.ts ./plugins/*.ts --outdir dist --target bun --packages external && tsc -p tsconfig.build.json",
+		"docs:dev": "bun run --cwd docs dev",
+		"docs:build": "bun run --cwd docs build"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.4",
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"dependencies": {
+		"smtp-server": "^3.18.1"
+	}
 }
