@@ -14,6 +14,13 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/puiusabin/fumi)](https://github.com/puiusabin/fumi/pulse)
 [![GitHub last commit](https://img.shields.io/github/last-commit/puiusabin/fumi)](https://github.com/puiusabin/fumi/commits/main)
 
+> [!WARNING]
+> **STARTTLS is not production-ready.** Bun does not support `socket.upgradeTLS()` on
+> server-side sockets ([oven-sh/bun#25044](https://github.com/oven-sh/bun/issues/25044)),
+> which means the STARTTLS command will crash or silently fail. In production, use
+> implicit TLS (port 465) or terminate TLS externally with HAProxy or stunnel.
+> Upvote the issue to help prioritize a fix.
+
 fumi - _**means letter✉️ in Japanese**_ - is a small, simple, and ultrafast SMTP Server framework built on Bun.
 
 ```ts
